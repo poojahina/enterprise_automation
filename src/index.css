@@ -1,0 +1,122 @@
+@import "tailwindcss";
+
+/* ─── Design Tokens ────────────────────────────────────────────── */
+@theme {
+  --color-surface-900: hsl(220, 25%, 8%);
+  --color-surface-800: hsl(220, 25%, 12%);
+  --color-surface-700: hsl(220, 20%, 18%);
+  --color-surface-600: hsl(220, 15%, 25%);
+  --color-surface-500: hsl(220, 12%, 35%);
+  --color-primary: hsl(210, 100%, 55%);
+  --color-primary-light: hsl(210, 100%, 70%);
+  --color-primary-dark: hsl(210, 100%, 40%);
+  --color-secondary: hsl(340, 80%, 60%);
+  --color-accent: hsl(160, 70%, 50%);
+  --color-warning: hsl(40, 95%, 55%);
+  --color-danger: hsl(0, 75%, 55%);
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  --animate-fade-in: fadeIn 0.5s ease-out;
+  --animate-slide-up: slideUp 0.5s ease-out both;
+  --animate-slide-right: slideRight 0.3s ease-out;
+  --animate-scale-in: scaleIn 0.3s ease-out;
+  --animate-pulse-glow: pulseGlow 2s infinite;
+}
+
+/* ─── Keyframes ────────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideRight {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.2); }
+  50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); }
+}
+
+/* ─── Base Styles ──────────────────────────────────────────────── */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: #e5e7eb;
+  background: hsl(220, 25%, 7%);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Scrollbar Styling ────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ─── Selection ────────────────────────────────────────────────── */
+::selection {
+  background: rgba(59, 130, 246, 0.3);
+  color: white;
+}
+
+/* ─── Focus Ring ───────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid hsl(210, 100%, 55%);
+  outline-offset: 2px;
+}
+
+/* ─── Select dropdown in dark mode ─────────────────────────────── */
+select option {
+  background: hsl(220, 25%, 12%);
+  color: #e5e7eb;
+}
+
+/* ─── Range slider ─────────────────────────────────────────────── */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  cursor: pointer;
+}
