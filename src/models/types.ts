@@ -15,6 +15,7 @@ export type PipelineStage =
   | 'Qualified'
   | 'Scored'
   | 'Discovery'
+  | 'PRD Creation'
   | 'Solution Designed'
   | 'ROI Approved'
   | 'Prioritized'
@@ -130,6 +131,17 @@ export interface DiscoveryAssessment {
   peakPeriods: string;
 }
 
+// ─── Product Requirements Document (PRD) ──────────────────────
+export interface ProductRequirementsDocument {
+  executiveSummary: string;
+  userPersonas: string[];
+  functionalRequirements: string[];
+  nonFunctionalRequirements: string[];
+  acceptanceCriteria: string[];
+  outOfScope: string[];
+  dependencies: string[];
+}
+
 // ─── Solution Recommendation ─────────────────────────────────
 export interface SolutionRecommendation {
   toBeSummary: string;
@@ -242,6 +254,7 @@ export interface AutomationOpportunity {
   qualification: QualificationResult | null;
   score: OpportunityScore | null;
   discovery: DiscoveryAssessment | null;
+  prd: ProductRequirementsDocument | null;
   solution: SolutionRecommendation | null;
   businessCase: BusinessCase | null;
   backlogItems: BacklogItem[];

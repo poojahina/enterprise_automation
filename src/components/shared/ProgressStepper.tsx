@@ -12,6 +12,7 @@ const STAGES: PipelineStage[] = [
   'Qualified',
   'Scored',
   'Discovery',
+  'PRD Creation',
   'Solution Designed',
   'ROI Approved',
   'Prioritized',

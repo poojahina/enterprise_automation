@@ -65,7 +65,7 @@ const IntakeWizard: React.FC = () => {
         businessPriority: form.businessPriority, targetTimeline: form.targetTimeline,
         complianceImpact: 'Low', regulatoryRequirement: false,
       },
-      classification, qualification: null, score: null, discovery: null,
+      classification, qualification: null, score: null, discovery: null, prd: null,
       solution: null, businessCase: null, backlogItems: [],
       podAllocation: null, sprintReadiness: null, complianceChecks: [],
       auditTrail: [{

@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, FileStack, Workflow, CheckSquare, BarChart3,
   Search as SearchIcon, Lightbulb, Calculator, Kanban, Users,
-  Rocket, FileText, ChevronLeft, ChevronRight, Zap
+  Rocket, FileText, ChevronLeft, ChevronRight, Zap, FileSignature
 } from 'lucide-react';
 import { useStore } from '../../state/store';
 
@@ -14,6 +14,7 @@ const navItems = [
   { name: 'Qualification', path: '/qualification', icon: CheckSquare },
   { name: 'Scoring', path: '/scoring', icon: BarChart3 },
   { name: 'Discovery', path: '/discovery', icon: SearchIcon },
+  { name: 'PRD Creation', path: '/prd', icon: FileSignature },
   { name: 'Solution Design', path: '/solution', icon: Lightbulb },
   { name: 'ROI Calculator', path: '/roi', icon: Calculator },
   { name: 'Prioritization', path: '/prioritization', icon: Kanban },

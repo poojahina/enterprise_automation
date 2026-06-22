@@ -7,6 +7,7 @@ import ClassificationPage from './pages/Classification/ClassificationPage';
 import QualificationPage from './pages/Qualification/QualificationPage';
 import ScoringPage from './pages/Scoring/ScoringPage';
 import DiscoveryWorkspace from './pages/Discovery/DiscoveryWorkspace';
+import PRDCreationPage from './pages/PRD/PRDCreationPage';
 import SolutionPage from './pages/Solution/SolutionPage';
 import ROICalculator from './pages/ROI/ROICalculator';
 import PrioritizationBoard from './pages/Prioritization/PrioritizationBoard';
@@ -26,6 +27,7 @@ const App: React.FC = () => {
         <Route path="/qualification" element={<QualificationPage />} />
         <Route path="/scoring" element={<ScoringPage />} />
         <Route path="/discovery" element={<DiscoveryWorkspace />} />
+        <Route path="/prd" element={<PRDCreationPage />} />
         <Route path="/solution" element={<SolutionPage />} />
         <Route path="/roi" element={<ROICalculator />} />
         <Route path="/prioritization" element={<PrioritizationBoard />} />

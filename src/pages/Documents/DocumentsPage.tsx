@@ -4,7 +4,7 @@ import { FileText, Download, Printer } from 'lucide-react';
 import AnimatedCard from '../../components/shared/AnimatedCard';
 import Badge from '../../components/shared/Badge';
 
-type DocType = 'business-case' | 'solution-design' | 'sprint-backlog';
+type DocType = 'prd' | 'business-case' | 'solution-design' | 'sprint-backlog';
 
 const DocumentsPage: React.FC = () => {
   const { opportunities } = useStore();
@@ -13,6 +13,7 @@ const DocumentsPage: React.FC = () => {
   const opp = opportunities.find(o => o.id === selectedId);
 
   const docs: { type: DocType; title: string; available: boolean }[] = [
+    { type: 'prd', title: 'Product Requirements Document', available: !!opp?.prd },
     { type: 'business-case', title: 'Business Case Document', available: !!opp?.businessCase },
     { type: 'solution-design', title: 'Solution Design Document', available: !!opp?.solution },
     { type: 'sprint-backlog', title: 'Sprint Backlog Export', available: (opp?.backlogItems.length ?? 0) > 0 },
@@ -66,6 +67,23 @@ const DocumentsPage: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {activeDoc === 'prd' && opp?.prd && (
+          <div className="space-y-4 text-sm">
+            <div className="bg-white/5 rounded-lg p-4">
+              <h3 className="text-sm font-bold text-gray-200 mb-2">1. Executive Summary</h3>
+              <p className="text-gray-300">{opp.prd.executiveSummary}</p>
+            </div>
+            <div className="bg-white/5 rounded-lg p-4">
+              <h3 className="text-sm font-bold text-gray-200 mb-2">2. Functional Requirements</h3>
+              <ul className="space-y-1">{opp.prd.functionalRequirements.map((r, i) => <li key={i} className="text-gray-300 flex items-center gap-2"><span className="w-1.5 h-1.5 bg-blue-400 rounded-full" />{r}</li>)}</ul>
+            </div>
+            <div className="bg-white/5 rounded-lg p-4">
+              <h3 className="text-sm font-bold text-gray-200 mb-2">3. Acceptance Criteria</h3>
+              <ul className="space-y-1">{opp.prd.acceptanceCriteria.map((c, i) => <li key={i} className="text-gray-300 flex items-center gap-2"><span className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />{c}</li>)}</ul>
+            </div>
+          </div>
+        )}
 
         {activeDoc === 'business-case' && opp?.businessCase && (
           <div className="space-y-4 text-sm">

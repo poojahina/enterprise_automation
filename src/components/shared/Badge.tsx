@@ -37,6 +37,7 @@ const colorMap: Record<string, string> = {
   'Classified': 'bg-blue-500/20 text-blue-300 border-blue-500/30',
   'Scored': 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30',
   'Discovery': 'bg-violet-500/20 text-violet-300 border-violet-500/30',
+  'PRD Creation': 'bg-pink-500/20 text-pink-300 border-pink-500/30',
   'Solution Designed': 'bg-purple-500/20 text-purple-300 border-purple-500/30',
   'ROI Approved': 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
   'Prioritized': 'bg-teal-500/20 text-teal-300 border-teal-500/30',
