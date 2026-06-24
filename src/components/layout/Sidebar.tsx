@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, FileStack, Workflow, CheckSquare, BarChart3,
   Search as SearchIcon, Lightbulb, Calculator, Kanban, Users,
-  Rocket, FileText, ChevronLeft, ChevronRight, Zap, FileSignature
+  Rocket, FileText, ChevronLeft, ChevronRight, Zap, FileSignature, Settings
 } from 'lucide-react';
 import { useStore } from '../../state/store';
 
@@ -21,6 +21,7 @@ const navItems = [
   { name: 'Pod Allocation', path: '/pods', icon: Users },
   { name: 'Sprint Readiness', path: '/sprint-readiness', icon: Rocket },
   { name: 'Documents', path: '/documents', icon: FileText },
+  { name: 'Settings', path: '/settings', icon: Settings },
 ];
 
 const Sidebar: React.FC = () => {

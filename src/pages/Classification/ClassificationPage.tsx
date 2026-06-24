@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../state/store';
 import { Workflow, Sparkles, ArrowRight, Check, X } from 'lucide-react';
 import AnimatedCard from '../../components/shared/AnimatedCard';
@@ -7,6 +8,7 @@ import ScoreGauge from '../../components/shared/ScoreGauge';
 import ExplainabilityPanel from '../../components/shared/ExplainabilityPanel';
 import ProgressStepper from '../../components/shared/ProgressStepper';
 import type { AutomationType, AutomationOpportunity } from '../../models/types';
+import { getNextStageRoute, getNextStageStatus } from '../../utils/pipeline';
 
 const TYPE_COLORS: Record<AutomationType, string> = {
   'Hyperautomation/Agentic Automation': '#a78bfa',
@@ -23,10 +25,37 @@ const TYPE_DESCRIPTIONS: Record<AutomationType, string> = {
 };
 
 const ClassificationPage: React.FC = () => {
+  const navigate = useNavigate();
   const { opportunities } = useStore();
   const [selectedId, setSelectedId] = useState<string>(opportunities[0]?.id ?? '');
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   const opp = opportunities.find(o => o.id === selectedId);
+
+  useEffect(() => {
+    if (opportunities.length > 0 && !opportunities.some((o) => o.id === selectedId)) {
+      setSelectedId(opportunities[0].id);
+    }
+  }, [opportunities, selectedId]);
+
+  const handleAccept = async () => {
+    if (!opp) return;
+    const nextStage = getNextStageRoute('Classification');
+    setSaving(true);
+    setSaveError('');
+
+    try {
+      await useStore.getState().updateOpportunity(opp.id, {
+        currentStage: getNextStageStatus('Classification')
+      });
+      navigate(nextStage);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Failed to accept classification.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in" id="classification-page">
@@ -113,13 +142,16 @@ const ClassificationPage: React.FC = () => {
 
                 {/* Action Buttons */}
                 <div className="flex items-center gap-2 pt-3 border-t border-white/10">
-                  <button className="flex items-center gap-1.5 bg-emerald-500/20 text-emerald-400 text-xs font-semibold px-4 py-2 rounded-lg hover:bg-emerald-500/30 transition-colors">
-                    <Check className="w-3.5 h-3.5" /> Accept Classification
+                  <button onClick={handleAccept} disabled={saving} className="flex items-center gap-1.5 bg-emerald-500/20 text-emerald-400 text-xs font-semibold px-4 py-2 rounded-lg hover:bg-emerald-500/30 transition-colors disabled:opacity-50">
+                    <Check className="w-3.5 h-3.5" /> {saving ? 'Accepting...' : 'Accept Classification'}
                   </button>
                   <button className="flex items-center gap-1.5 bg-white/5 text-gray-300 text-xs font-semibold px-4 py-2 rounded-lg hover:bg-white/10 transition-colors">
                     Override
                   </button>
                 </div>
+                {saveError && (
+                  <p className="mt-3 text-sm text-red-400">{saveError}</p>
+                )}
               </AnimatedCard>
 
               {/* Explainability */}

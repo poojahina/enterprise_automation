@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../state/store';
-import { FileSignature, Users, CheckCircle, AlertTriangle, Layers, ListTodo } from 'lucide-react';
+import { FileSignature, Users, CheckCircle, AlertTriangle, Layers, ListTodo, Sparkles } from 'lucide-react';
 import AnimatedCard from '../../components/shared/AnimatedCard';
 import ProgressStepper from '../../components/shared/ProgressStepper';
 
@@ -8,6 +8,26 @@ const PRDCreationPage: React.FC = () => {
   const { opportunities } = useStore();
   const [selectedId, setSelectedId] = useState<string>(opportunities.find(o => o.prd)?.id ?? opportunities[0]?.id ?? '');
   const opp = opportunities.find(o => o.id === selectedId);
+
+  const [generating, setGenerating] = useState(false);
+  const [aiOutput, setAiOutput] = useState<string | null>(null);
+
+  const generatePRD = async () => {
+    setGenerating(true);
+    try {
+      const res = await fetch('/api/llm/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: 'Generate requirements', provider: 'AzureOpenAI' })
+      });
+      const data = await res.json();
+      setAiOutput(data.result);
+    } catch (error) {
+      console.error('Generation failed', error);
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in" id="prd-page">
@@ -29,6 +49,38 @@ const PRDCreationPage: React.FC = () => {
       </div>
 
       {opp && <ProgressStepper currentStage={opp.currentStage} />}
+
+      {/* AI Assistant Panel */}
+      {opp && (
+        <AnimatedCard className="border-pink-500/30 bg-gradient-to-br from-pink-500/5 to-rose-500/5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-pink-400" />
+              <h3 className="text-sm font-semibold text-white">AI Assistant</h3>
+            </div>
+          </div>
+          <p className="text-xs text-gray-400 mt-2 mb-4">Leverage Discovery Context to automatically generate comprehensive Product Requirements.</p>
+          
+          <button
+            onClick={generatePRD}
+            disabled={generating}
+            className="flex items-center gap-2 px-4 py-2 bg-pink-500 hover:bg-pink-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 text-sm"
+          >
+            <Sparkles className="w-4 h-4" />
+            {generating ? 'Drafting PRD...' : 'Auto-Generate PRD'}
+          </button>
+
+          {aiOutput && (
+            <div className="mt-4 p-4 bg-black/40 rounded-lg border border-pink-500/20">
+              <h4 className="text-xs font-semibold text-pink-400 uppercase tracking-wider mb-2">Generated Draft</h4>
+              <p className="text-sm text-gray-300 whitespace-pre-wrap">{aiOutput}</p>
+              <button className="mt-3 px-3 py-1.5 bg-blue-500/20 text-blue-400 text-xs rounded hover:bg-blue-500/30">
+                Apply to PRD Form
+              </button>
+            </div>
+          )}
+        </AnimatedCard>
+      )}
 
       {opp?.prd ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

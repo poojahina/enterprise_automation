@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../state/store';
-import { Search, FileText, Layers, AlertTriangle, Database, ArrowRight } from 'lucide-react';
+import { Search, FileText, Layers, AlertTriangle, Database, ArrowRight, Upload, Sparkles } from 'lucide-react';
 import AnimatedCard from '../../components/shared/AnimatedCard';
 import ProgressStepper from '../../components/shared/ProgressStepper';
 
@@ -8,6 +8,52 @@ const DiscoveryWorkspace: React.FC = () => {
   const { opportunities } = useStore();
   const [selectedId, setSelectedId] = useState<string>(opportunities.find(o => o.discovery)?.id ?? opportunities[0]?.id ?? '');
   const opp = opportunities.find(o => o.id === selectedId);
+
+  const [uploading, setUploading] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [aiOutput, setAiOutput] = useState<string | null>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !opp) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('opportunityId', opp.id);
+
+    try {
+      const res = await fetch('/api/context/upload', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('Context uploaded and parsed successfully!');
+      }
+    } catch (error) {
+      console.error('Upload failed', error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const generateDiscovery = async () => {
+    setGenerating(true);
+    try {
+      const res = await fetch('/api/llm/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: 'Generate process steps', provider: 'AzureOpenAI' })
+      });
+      const data = await res.json();
+      setAiOutput(data.result);
+    } catch (error) {
+      console.error('Generation failed', error);
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const Section: React.FC<{ title: string; icon: React.ReactNode; items: string[] }> = ({ title, icon, items }) => (
     <AnimatedCard>
@@ -47,6 +93,46 @@ const DiscoveryWorkspace: React.FC = () => {
       </div>
 
       {opp && <ProgressStepper currentStage={opp.currentStage} />}
+
+      {/* AI Assistant Panel */}
+      {opp && (
+        <AnimatedCard className="border-purple-500/30 bg-gradient-to-br from-purple-500/5 to-pink-500/5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-purple-400" />
+              <h3 className="text-sm font-semibold text-white">AI Assistant</h3>
+            </div>
+          </div>
+          <p className="text-xs text-gray-400 mt-2 mb-4">Upload process documentation (video transcripts, SOPs, PDFs) to automatically extract Discovery requirements.</p>
+          
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-lg cursor-pointer hover:bg-white/10 transition-colors text-sm text-gray-300">
+              <Upload className="w-4 h-4" />
+              {uploading ? 'Uploading...' : 'Upload Context Document'}
+              <input type="file" className="hidden" onChange={handleFileUpload} disabled={uploading} />
+            </label>
+            
+            <button
+              onClick={generateDiscovery}
+              disabled={generating}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 text-sm"
+            >
+              <Sparkles className="w-4 h-4" />
+              {generating ? 'Generating...' : 'Auto-Generate Discovery'}
+            </button>
+          </div>
+
+          {aiOutput && (
+            <div className="mt-4 p-4 bg-black/40 rounded-lg border border-purple-500/20">
+              <h4 className="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-2">Generated Draft</h4>
+              <p className="text-sm text-gray-300 whitespace-pre-wrap">{aiOutput}</p>
+              <button className="mt-3 px-3 py-1.5 bg-blue-500/20 text-blue-400 text-xs rounded hover:bg-blue-500/30">
+                Apply to Discovery Workspace
+              </button>
+            </div>
+          )}
+        </AnimatedCard>
+      )}
 
       {opp?.discovery ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

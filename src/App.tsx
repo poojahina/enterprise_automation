@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { useStore } from './state/store';
 import AppLayout from './components/layout/AppLayout';
 import Dashboard from './pages/Dashboard/Dashboard';
 import IntakeWizard from './pages/Intake/IntakeWizard';
@@ -14,9 +15,17 @@ import PrioritizationBoard from './pages/Prioritization/PrioritizationBoard';
 import PodAllocationPage from './pages/PodAllocation/PodAllocationPage';
 import SprintReadinessPage from './pages/SprintReadiness/SprintReadinessPage';
 import DocumentsPage from './pages/Documents/DocumentsPage';
+import StageConfigPanel from './pages/Settings/StageConfigPanel';
 import NotFound from './pages/NotFound';
 
 const App: React.FC = () => {
+  const { fetchOpportunities, fetchStages } = useStore();
+
+  useEffect(() => {
+    fetchOpportunities().catch((error) => console.error('Failed to load opportunities', error));
+    fetchStages().catch((error) => console.error('Failed to load stages', error));
+  }, [fetchOpportunities, fetchStages]);
+
   return (
     <AppLayout>
       <Routes>
@@ -34,6 +43,7 @@ const App: React.FC = () => {
         <Route path="/pods" element={<PodAllocationPage />} />
         <Route path="/sprint-readiness" element={<SprintReadinessPage />} />
         <Route path="/documents" element={<DocumentsPage />} />
+        <Route path="/settings" element={<StageConfigPanel />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AppLayout>

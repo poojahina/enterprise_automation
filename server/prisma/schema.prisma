@@ -1,0 +1,59 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Opportunity {
+  id               String       @id @default(uuid())
+  processName      String
+  currentStage     String
+  status           String
+  data             String       // Core JSON blob containing metrics, impact, etc.
+  documents        Document[]
+  auditTrails      AuditTrail[]
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+}
+
+model StageConfig {
+  id               String   @id
+  name             String
+  order            Int
+  isEnabled        Boolean  @default(true)
+  rolesAllowed     String   // JSON array string of roles
+  configOptions    String?  // JSON string
+}
+
+model Document {
+  id               String   @id @default(uuid())
+  opportunityId    String
+  fileName         String
+  fileType         String
+  content          String   // Extracted text content
+  extractedContext String?  // AI summarized context
+  opportunity      Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  uploadedAt       DateTime @default(now())
+}
+
+model IntegrationConfig {
+  id               String   @id
+  provider         String   // e.g., 'AzureOpenAI', 'SharePoint', 'AzureDevOps'
+  isActive         Boolean  @default(false)
+  credentials      String   // Encrypted/Vault reference JSON
+}
+
+model AuditTrail {
+  id               String   @id @default(uuid())
+  opportunityId    String
+  timestamp        DateTime @default(now())
+  action           String
+  performedBy      String
+  role             String
+  details          String
+  stage            String
+  opportunity      Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+}

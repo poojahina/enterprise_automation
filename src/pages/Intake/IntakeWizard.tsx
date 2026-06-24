@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../state/store';
 import { ChevronRight, ChevronLeft, Check, Send } from 'lucide-react';
 import { classifyAutomationType } from '../../utils/classifyAutomationType';
+import { getNextStageRoute, getNextStageStatus } from '../../utils/pipeline';
 import AnimatedCard from '../../components/shared/AnimatedCard';
 import type { AutomationOpportunity, ProcessCharacteristics } from '../../models/types';
 
@@ -12,6 +13,8 @@ const IntakeWizard: React.FC = () => {
   const navigate = useNavigate();
   const { addOpportunity } = useStore();
   const [step, setStep] = useState(0);
+  const [submitError, setSubmitError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const [form, setForm] = useState({
     processName: '', description: '', businessUnit: '', processOwner: '',
@@ -29,7 +32,10 @@ const IntakeWizard: React.FC = () => {
 
   const updateForm = (field: string, value: unknown) => setForm(prev => ({ ...prev, [field]: value }));
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    setSubmitError('');
+
     const chars: ProcessCharacteristics = {
       isRuleBased: form.isRuleBased, requiresReasoning: form.requiresReasoning,
       requiresMultiSystemOrchestration: form.requiresMultiSystemOrchestration,
@@ -39,12 +45,13 @@ const IntakeWizard: React.FC = () => {
       dataType: form.dataType, processComplexity: form.processComplexity,
     };
     const classification = classifyAutomationType(chars);
+    const nextStageStatus = getNextStageStatus('Intake');
     const newOpp: AutomationOpportunity = {
       id: `OPP-${String(Date.now()).slice(-3)}`,
       processName: form.processName, description: form.description,
       businessUnit: form.businessUnit, processOwner: form.processOwner,
       submittedBy: 'Ashutosh', submittedDate: new Date().toISOString().split('T')[0],
-      currentStage: 'Classified',
+      currentStage: nextStageStatus,
       processCharacteristics: chars,
       impact: {
         painPoints: form.painPoints, timeSavingsHoursPerMonth: form.timeSavings,
@@ -75,8 +82,15 @@ const IntakeWizard: React.FC = () => {
         stage: 'Classified',
       }],
     };
-    addOpportunity(newOpp);
-    navigate('/classification');
+
+    try {
+      await addOpportunity(newOpp);
+      navigate(getNextStageRoute('Intake'));
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Failed to submit opportunity.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const Toggle: React.FC<{ label: string; description: string; checked: boolean; onChange: (v: boolean) => void }> = ({ label, description, checked, onChange }) => (
@@ -222,6 +236,9 @@ const IntakeWizard: React.FC = () => {
         )}
 
         {/* Navigation */}
+        {submitError && (
+          <p className="mt-4 text-sm text-red-400">{submitError}</p>
+        )}
         <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/10">
           <button
             onClick={() => setStep(s => Math.max(0, s - 1))}
@@ -240,9 +257,10 @@ const IntakeWizard: React.FC = () => {
           ) : (
             <button
               onClick={handleSubmit}
+              disabled={submitting}
               className="flex items-center gap-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:shadow-lg hover:shadow-blue-500/25 text-white text-sm font-semibold px-5 py-2 rounded-lg transition-all"
             >
-              <Send className="w-4 h-4" /> Submit & Classify
+              <Send className="w-4 h-4" /> {submitting ? 'Submitting...' : 'Submit & Classify'}
             </button>
           )}
         </div>

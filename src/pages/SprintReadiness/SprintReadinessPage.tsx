@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../state/store';
-import { Rocket, Check, X, AlertCircle, ExternalLink } from 'lucide-react';
+import { Rocket, Check, X, AlertCircle, ExternalLink, RefreshCw } from 'lucide-react';
 import AnimatedCard from '../../components/shared/AnimatedCard';
 import Badge from '../../components/shared/Badge';
 import ScoreGauge from '../../components/shared/ScoreGauge';
@@ -11,6 +11,30 @@ const SprintReadinessPage: React.FC = () => {
   const { opportunities } = useStore();
   const [selectedId, setSelectedId] = useState<string>(opportunities.find(o => o.sprintReadiness)?.id ?? opportunities[0]?.id ?? '');
   const opp = opportunities.find(o => o.id === selectedId);
+
+  const [syncing, setSyncing] = useState(false);
+
+  const syncToDevOps = async () => {
+    if (!opp || opp.backlogItems.length === 0) return;
+    setSyncing(true);
+    try {
+      const res = await fetch('/api/integrations/devops/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ opportunityId: opp.id, items: opp.backlogItems })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(data.message);
+      } else {
+        alert('Sync failed');
+      }
+    } catch (e) {
+      alert('Error syncing to Azure DevOps');
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in" id="sprint-readiness-page">
@@ -91,9 +115,19 @@ const SprintReadinessPage: React.FC = () => {
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-white flex items-center gap-2">
                     <ExternalLink className="w-4 h-4 text-blue-400" />
-                    Jira Backlog Preview
+                    Jira / Azure DevOps Backlog
                   </h3>
-                  <span className="text-[10px] text-gray-400">{opp.backlogItems.reduce((s, b) => s + b.storyPoints, 0)} total story points</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] text-gray-400">{opp.backlogItems.reduce((s, b) => s + b.storyPoints, 0)} total story points</span>
+                    <button
+                      onClick={syncToDevOps}
+                      disabled={syncing}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 text-xs font-medium rounded transition-colors disabled:opacity-50"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
+                      {syncing ? 'Syncing...' : 'Sync to ADO'}
+                    </button>
+                  </div>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">

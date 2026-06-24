@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../state/store';
-import { FileText, Download, Printer } from 'lucide-react';
+import { FileText, Download, Printer, Share2 } from 'lucide-react';
 import AnimatedCard from '../../components/shared/AnimatedCard';
 import Badge from '../../components/shared/Badge';
 
@@ -10,7 +10,30 @@ const DocumentsPage: React.FC = () => {
   const { opportunities } = useStore();
   const [selectedId, setSelectedId] = useState<string>(opportunities[0]?.id ?? '');
   const [activeDoc, setActiveDoc] = useState<DocType>('business-case');
+  const [syncing, setSyncing] = useState(false);
   const opp = opportunities.find(o => o.id === selectedId);
+
+  const syncToSharePoint = async () => {
+    if (!opp) return;
+    setSyncing(true);
+    try {
+      const res = await fetch('/api/integrations/sharepoint/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ opportunityId: opp.id, documentId: activeDoc })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(data.message);
+      } else {
+        alert('Sync failed');
+      }
+    } catch (error) {
+      alert('Error syncing to SharePoint');
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const docs: { type: DocType; title: string; available: boolean }[] = [
     { type: 'prd', title: 'Product Requirements Document', available: !!opp?.prd },
@@ -59,6 +82,14 @@ const DocumentsPage: React.FC = () => {
         <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
           <h2 className="text-base font-bold text-white">{docs.find(d => d.type === activeDoc)?.title}</h2>
           <div className="flex items-center gap-2">
+            <button
+              onClick={syncToSharePoint}
+              disabled={syncing}
+              className="flex items-center gap-1 bg-white/5 text-gray-300 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors disabled:opacity-50"
+            >
+              <Share2 className={`w-3.5 h-3.5 ${syncing ? 'animate-pulse text-blue-400' : ''}`} />
+              {syncing ? 'Syncing...' : 'Sync to SharePoint'}
+            </button>
             <button className="flex items-center gap-1 bg-white/5 text-gray-300 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors">
               <Printer className="w-3.5 h-3.5" /> Print
             </button>

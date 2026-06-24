@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore } from '../../state/store';
-import { Users, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Users, CheckCircle2, AlertTriangle, Sparkles } from 'lucide-react';
 import AnimatedCard from '../../components/shared/AnimatedCard';
 import Badge from '../../components/shared/Badge';
 import ScoreGauge from '../../components/shared/ScoreGauge';
@@ -29,6 +29,28 @@ const PodAllocationPage: React.FC = () => {
           <p className="text-sm text-gray-400">Delivery pod assignment based on skills, capacity, and specialization</p>
         </div>
       </div>
+
+      <AnimatedCard className="border-sky-500/30 bg-gradient-to-br from-sky-500/5 to-blue-500/5 mb-6">
+        <div className="flex items-center gap-2 mb-2">
+          <Sparkles className="w-5 h-5 text-sky-400" />
+          <h3 className="text-sm font-semibold text-white">AI Team Composition Generator</h3>
+        </div>
+        <p className="text-xs text-gray-400 mb-4">Dynamically analyze project requirements to recommend optimal pod allocation and skill combinations.</p>
+        <button
+          className="flex items-center gap-2 px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-medium transition-colors text-sm"
+          onClick={async () => {
+             const res = await fetch('/api/llm/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt: 'Generate team', provider: 'AzureOpenAI' })
+             });
+             const data = await res.json();
+             alert('AI Recommendation:\n' + data.result);
+          }}
+        >
+          <Sparkles className="w-4 h-4" /> Generate Recommendation
+        </button>
+      </AnimatedCard>
 
       {/* Pod Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
