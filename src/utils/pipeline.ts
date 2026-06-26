@@ -47,6 +47,14 @@ const getConfiguredStages = () => {
     .filter((stage): stage is PipelineConfigStage & { isEnabled: boolean } => Boolean(stage));
 };
 
+export const getEnabledPipelineStages = () => {
+  return getConfiguredStages().filter((stage) => stage.isEnabled);
+};
+
+export const getEnabledPipelineStageStatuses = (): PipelineStage[] => {
+  return getEnabledPipelineStages().map((stage) => stage.status);
+};
+
 const getNextEnabledStage = (currentStageName: string) => {
   const currentStage = stageByName.get(currentStageName);
   if (!currentStage) return null;
@@ -67,6 +75,14 @@ export const getNextStageStatus = (currentStageName: string): PipelineStage => {
   return getNextEnabledStage(currentStageName)?.status ?? 'Sprint Ready';
 };
 
+export const getStageStatus = (stageName: string): PipelineStage | null => {
+  return stageByName.get(stageName)?.status ?? null;
+};
+
 export const getStageStatusByRoute = (route: string): PipelineStage | null => {
   return stageByRoute.get(route)?.status ?? null;
+};
+
+export const getStageRoute = (stageName: string): string => {
+  return stageByName.get(stageName)?.route ?? '/dashboard';
 };

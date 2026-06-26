@@ -13,7 +13,8 @@ import {
 import KPICard from '../../components/shared/KPICard';
 import Badge from '../../components/shared/Badge';
 import AnimatedCard from '../../components/shared/AnimatedCard';
-import type { AutomationType } from '../../models/types';
+import type { AutomationType, PipelineStage } from '../../models/types';
+import { getEnabledPipelineStageStatuses, getStageRoute } from '../../utils/pipeline';
 
 const COLORS: Record<AutomationType, string> = {
   'Hyperautomation/Agentic Automation': '#a78bfa',
@@ -23,7 +24,7 @@ const COLORS: Record<AutomationType, string> = {
 };
 
 const Dashboard: React.FC = () => {
-  const { opportunities } = useStore();
+  const { opportunities, stages, setSelectedOpportunityId } = useStore();
   const navigate = useNavigate();
 
   // KPI calculations
@@ -46,13 +47,28 @@ const Dashboard: React.FC = () => {
     }, {} as Record<string, number>)
   ).map(([name, value]) => ({ name: name.replace('/', '/\n'), value, fullName: name }));
 
-  const stageData = [
-    { name: 'Submitted', value: totalIdeas, fill: '#6b7280' },
-    { name: 'Classified', value: classified, fill: '#60a5fa' },
-    { name: 'Qualified', value: qualified, fill: '#a78bfa' },
-    { name: 'Scored', value: scored, fill: '#22d3ee' },
-    { name: 'Sprint Ready', value: sprintReady, fill: '#34d399' },
-  ];
+  const stageColors: Record<PipelineStage, string> = {
+    Submitted: '#6b7280',
+    Classified: '#60a5fa',
+    Qualified: '#a78bfa',
+    Scored: '#22d3ee',
+    Discovery: '#818cf8',
+    'PRD Creation': '#f472b6',
+    'Solution Designed': '#f59e0b',
+    'ROI Approved': '#34d399',
+    Prioritized: '#38bdf8',
+    'Pod Allocated': '#c084fc',
+    'Sprint Ready': '#22c55e',
+  };
+  const enabledStageStatuses = stages.length > 0 ? getEnabledPipelineStageStatuses() : [];
+  const visibleStageStatuses = enabledStageStatuses.length > 0
+    ? enabledStageStatuses
+    : Object.keys(stageColors) as PipelineStage[];
+  const stageData = visibleStageStatuses.map((stage) => ({
+    name: stage,
+    value: opportunities.filter((o) => o.currentStage === stage).length,
+    fill: stageColors[stage],
+  }));
 
   const priorityRadar = [
     { subject: 'Business Impact', A: 85 },
@@ -198,7 +214,10 @@ const Dashboard: React.FC = () => {
                 <tr
                   key={opp.id}
                   className="border-b border-white/5 hover:bg-white/5 cursor-pointer transition-colors"
-                  onClick={() => navigate('/classification')}
+                  onClick={() => {
+                    setSelectedOpportunityId(opp.id);
+                    navigate(getStageRoute(opp.currentStage));
+                  }}
                 >
                   <td className="px-3 py-2.5 text-xs font-mono text-blue-400">{opp.id}</td>
                   <td className="px-3 py-2.5 text-sm text-gray-200 max-w-[200px] truncate">{opp.processName}</td>

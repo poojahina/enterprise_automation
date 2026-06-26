@@ -1,12 +1,14 @@
 import React from 'react';
 import { Check } from 'lucide-react';
 import type { PipelineStage } from '../../models/types';
+import { getEnabledPipelineStageStatuses } from '../../utils/pipeline';
+import { useStore } from '../../state/store';
 
 interface ProgressStepperProps {
   currentStage: PipelineStage;
 }
 
-const STAGES: PipelineStage[] = [
+const FALLBACK_STAGES: PipelineStage[] = [
   'Submitted',
   'Classified',
   'Qualified',
@@ -21,6 +23,9 @@ const STAGES: PipelineStage[] = [
 ];
 
 const ProgressStepper: React.FC<ProgressStepperProps> = ({ currentStage }) => {
+  const configuredStages = useStore((state) => state.stages);
+  const enabledStages = configuredStages.length > 0 ? getEnabledPipelineStageStatuses() : [];
+  const STAGES = enabledStages.length > 0 ? enabledStages : FALLBACK_STAGES;
   const currentIndex = STAGES.indexOf(currentStage);
 
   return (

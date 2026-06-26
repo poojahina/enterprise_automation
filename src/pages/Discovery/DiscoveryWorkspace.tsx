@@ -1,17 +1,38 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useStore } from '../../state/store';
-import { Search, FileText, Layers, AlertTriangle, Database, ArrowRight, Upload, Sparkles } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Search, FileText, Layers, AlertTriangle, Database, ArrowRight, Upload, Sparkles, Check } from 'lucide-react';
 import AnimatedCard from '../../components/shared/AnimatedCard';
 import ProgressStepper from '../../components/shared/ProgressStepper';
+import { getNextStageRoute } from '../../utils/pipeline';
 
 const DiscoveryWorkspace: React.FC = () => {
-  const { opportunities } = useStore();
-  const [selectedId, setSelectedId] = useState<string>(opportunities.find(o => o.discovery)?.id ?? opportunities[0]?.id ?? '');
+  const navigate = useNavigate();
+  const { opportunities, selectedOpportunityId, setSelectedOpportunityId } = useStore();
+  const [selectedId, setSelectedId] = useState<string>(
+    selectedOpportunityId ??
+    opportunities.find(o => o.currentStage === 'Discovery' || o.currentStage === 'Scored')?.id ??
+    opportunities.find(o => o.discovery)?.id ??
+    opportunities[0]?.id ??
+    ''
+  );
   const opp = opportunities.find(o => o.id === selectedId);
 
   const [uploading, setUploading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [applying, setApplying] = useState(false);
+  const [message, setMessage] = useState('');
   const [aiOutput, setAiOutput] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (opportunities.length > 0 && !opportunities.some((o) => o.id === selectedId)) {
+      setSelectedId(opportunities[0].id);
+    }
+  }, [opportunities, selectedId]);
+
+  useEffect(() => {
+    if (selectedId) setSelectedOpportunityId(selectedId);
+  }, [selectedId, setSelectedOpportunityId]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -39,19 +60,41 @@ const DiscoveryWorkspace: React.FC = () => {
   };
 
   const generateDiscovery = async () => {
+    if (!opp) return;
     setGenerating(true);
+    setMessage('');
     try {
       const res = await fetch('/api/llm/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: 'Generate process steps', provider: 'AzureOpenAI' })
+        body: JSON.stringify({ prompt: `Generate process steps for ${opp.processName}`, provider: 'AzureOpenAI', context: opp })
       });
+      if (!res.ok) throw new Error('Failed to generate discovery draft.');
       const data = await res.json();
       setAiOutput(data.result);
     } catch (error) {
-      console.error('Generation failed', error);
+      setMessage(error instanceof Error ? error.message : 'Generation failed.');
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const applyDiscovery = async (goNext = false) => {
+    if (!opp) return;
+    setApplying(true);
+    setMessage('');
+    try {
+      await useStore.getState().runWorkflowAction(opp.id, 'apply-discovery', { aiOutput });
+      setAiOutput(null);
+      if (goNext) {
+        navigate(getNextStageRoute('Discovery'));
+      } else {
+        setMessage('Discovery workspace applied.');
+      }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Failed to apply discovery.');
+    } finally {
+      setApplying(false);
     }
   };
 
@@ -102,6 +145,26 @@ const DiscoveryWorkspace: React.FC = () => {
               <Sparkles className="w-5 h-5 text-purple-400" />
               <h3 className="text-sm font-semibold text-white">AI Assistant</h3>
             </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => opp.discovery ? navigate(getNextStageRoute('Discovery')) : applyDiscovery(true)}
+                disabled={applying}
+                className="flex items-center gap-1.5 bg-emerald-500/20 text-emerald-400 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-emerald-500/30 transition-colors disabled:opacity-50"
+              >
+                <Check className="w-3.5 h-3.5" />
+                {applying ? 'Completing...' : opp.discovery ? 'Continue to PRD' : 'Complete Discovery'}
+              </button>
+              {opp.discovery && (
+                <button
+                  onClick={() => navigate(getNextStageRoute('Discovery'))}
+                  disabled={applying}
+                  className="flex items-center gap-1.5 bg-blue-500/20 text-blue-400 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-500/30 transition-colors disabled:opacity-50"
+                >
+                  <ArrowRight className="w-3.5 h-3.5" />
+                  Go to Next Stage
+                </button>
+              )}
+            </div>
           </div>
           <p className="text-xs text-gray-400 mt-2 mb-4">Upload process documentation (video transcripts, SOPs, PDFs) to automatically extract Discovery requirements.</p>
           
@@ -126,11 +189,17 @@ const DiscoveryWorkspace: React.FC = () => {
             <div className="mt-4 p-4 bg-black/40 rounded-lg border border-purple-500/20">
               <h4 className="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-2">Generated Draft</h4>
               <p className="text-sm text-gray-300 whitespace-pre-wrap">{aiOutput}</p>
-              <button className="mt-3 px-3 py-1.5 bg-blue-500/20 text-blue-400 text-xs rounded hover:bg-blue-500/30">
-                Apply to Discovery Workspace
-              </button>
+              <div className="flex flex-wrap items-center gap-2 mt-3">
+                <button onClick={() => applyDiscovery(false)} disabled={applying} className="px-3 py-1.5 bg-blue-500/20 text-blue-400 text-xs rounded hover:bg-blue-500/30 disabled:opacity-50">
+                  {applying ? 'Applying...' : 'Apply to Discovery Workspace'}
+                </button>
+                <button onClick={() => applyDiscovery(true)} disabled={applying} className="px-3 py-1.5 bg-emerald-500/20 text-emerald-400 text-xs rounded hover:bg-emerald-500/30 disabled:opacity-50">
+                  {applying ? 'Completing...' : 'Apply and Continue'}
+                </button>
+              </div>
             </div>
           )}
+          {message && <p className="mt-3 text-sm text-blue-300">{message}</p>}
         </AnimatedCard>
       )}
 
@@ -172,7 +241,19 @@ const DiscoveryWorkspace: React.FC = () => {
         </div>
       ) : (
         <AnimatedCard>
-          <p className="text-sm text-gray-400">Discovery not yet completed for this opportunity. Complete scoring first.</p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <p className="text-sm text-gray-400">Discovery not yet completed. Generate it with AI, or complete discovery using the default workspace.</p>
+            {opp && (
+              <button
+                onClick={() => applyDiscovery(true)}
+                disabled={applying}
+                className="flex items-center justify-center gap-1.5 bg-emerald-500/20 text-emerald-400 text-xs font-semibold px-4 py-2 rounded-lg hover:bg-emerald-500/30 transition-colors disabled:opacity-50"
+              >
+                <Check className="w-3.5 h-3.5" />
+                {applying ? 'Completing...' : 'Complete Discovery'}
+              </button>
+            )}
+          </div>
         </AnimatedCard>
       )}
     </div>

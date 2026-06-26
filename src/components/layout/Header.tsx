@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useStore } from '../../state/store';
 import { Bell, Search, User, Shield, Wrench, Code, Package } from 'lucide-react';
 import type { Role } from '../../models/types';
@@ -21,6 +21,7 @@ const roles: Role[] = ['Business User', 'Automation COE Analyst', 'Solution Arch
 
 const Header: React.FC = () => {
   const { role, setRole } = useStore();
+  const [showNotifications, setShowNotifications] = useState(false);
 
   return (
     <header className="flex items-center justify-between h-14 px-5 bg-[hsl(220,25%,10%)] border-b border-white/10" id="app-header">
@@ -38,10 +39,34 @@ const Header: React.FC = () => {
       {/* Right actions */}
       <div className="flex items-center gap-3">
         {/* Notifications */}
-        <button className="relative flex items-center justify-center w-8 h-8 rounded-lg hover:bg-white/5 text-gray-400 hover:text-gray-200 transition-colors" id="notifications-button">
-          <Bell className="w-4 h-4" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-        </button>
+        <div className="relative">
+          <button
+            onClick={() => setShowNotifications((open) => !open)}
+            className="relative flex items-center justify-center w-8 h-8 rounded-lg hover:bg-white/5 text-gray-400 hover:text-gray-200 transition-colors"
+            id="notifications-button"
+            aria-label="Toggle notifications"
+          >
+            <Bell className="w-4 h-4" />
+            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+          </button>
+          {showNotifications && (
+            <div className="absolute right-0 top-10 z-50 w-72 rounded-lg border border-white/10 bg-[hsl(220,25%,12%)] shadow-xl">
+              <div className="px-4 py-3 border-b border-white/10">
+                <p className="text-xs font-semibold text-gray-200">Notifications</p>
+              </div>
+              <div className="p-3 space-y-2">
+                <div className="rounded-md bg-white/5 px-3 py-2">
+                  <p className="text-xs text-gray-200">Pipeline actions are now saved through backend APIs.</p>
+                  <p className="text-[10px] text-gray-500 mt-1">Just now</p>
+                </div>
+                <div className="rounded-md bg-white/5 px-3 py-2">
+                  <p className="text-xs text-gray-200">Review opportunities needing qualification or readiness.</p>
+                  <p className="text-[10px] text-gray-500 mt-1">Today</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Role Switcher */}
         <div className="flex items-center gap-2">

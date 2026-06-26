@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../state/store';
-import { Calculator, DollarSign, Clock, TrendingUp, Users } from 'lucide-react';
+import { Calculator, DollarSign, Clock, TrendingUp, Users, Save } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import AnimatedCard from '../../components/shared/AnimatedCard';
 import ScoreGauge from '../../components/shared/ScoreGauge';
@@ -16,6 +16,8 @@ const ROICalculator: React.FC = () => {
   const [implCost, setImplCost] = useState(opp?.businessCase?.implementationCost ?? 100000);
   const [annualSavings, setAnnualSavings] = useState(opp?.businessCase?.annualSavings ?? 150000);
   const [supportCost, setSupportCost] = useState(opp?.businessCase?.annualSupportCost ?? 20000);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
 
   const liveROI = calculateROI({
     implementationCost: implCost, annualSavings, annualSupportCost: supportCost,
@@ -77,6 +79,34 @@ const ROICalculator: React.FC = () => {
               <label className="flex justify-between text-xs text-gray-400 mb-1"><span>Annual Support Cost</span><span className="text-amber-400 font-medium">${supportCost.toLocaleString()}</span></label>
               <input type="range" min="0" max="100000" step="2000" value={supportCost} onChange={e => setSupportCost(Number(e.target.value))} className="w-full accent-amber-500" />
             </div>
+            <button
+              onClick={async () => {
+                if (!opp) return;
+                setSaving(true);
+                setMessage('');
+                try {
+                  await useStore.getState().runWorkflowAction(opp.id, 'approve-roi', {
+                    implementationCost: implCost,
+                    annualSavings,
+                    annualSupportCost: supportCost,
+                    timelineWeeks: liveROI.timelineWeeks,
+                    effortStoryPoints: liveROI.effortStoryPoints,
+                    fteReduction: liveROI.fteReduction,
+                  });
+                  setMessage('Business case saved and ROI approved.');
+                } catch (error) {
+                  setMessage(error instanceof Error ? error.message : 'Failed to approve ROI.');
+                } finally {
+                  setSaving(false);
+                }
+              }}
+              disabled={!opp || saving}
+              className="mt-4 flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 text-sm"
+            >
+              <Save className="w-4 h-4" />
+              {saving ? 'Saving...' : 'Save & Approve ROI'}
+            </button>
+            {message && <p className="mt-3 text-sm text-blue-300">{message}</p>}
           </div>
         </AnimatedCard>
 

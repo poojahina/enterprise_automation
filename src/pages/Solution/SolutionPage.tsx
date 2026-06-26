@@ -1,14 +1,53 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useStore } from '../../state/store';
-import { Lightbulb, Cpu, Shield, Monitor, Users, Puzzle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Lightbulb, Cpu, Shield, Monitor, Users, Puzzle, Sparkles, ArrowRight, CheckCircle } from 'lucide-react';
 import AnimatedCard from '../../components/shared/AnimatedCard';
-import Badge from '../../components/shared/Badge';
 import ProgressStepper from '../../components/shared/ProgressStepper';
+import { getNextStageRoute } from '../../utils/pipeline';
 
 const SolutionPage: React.FC = () => {
-  const { opportunities } = useStore();
-  const [selectedId, setSelectedId] = useState<string>(opportunities.find(o => o.solution)?.id ?? opportunities[0]?.id ?? '');
+  const navigate = useNavigate();
+  const { opportunities, selectedOpportunityId, setSelectedOpportunityId } = useStore();
+  const [selectedId, setSelectedId] = useState<string>(
+    selectedOpportunityId ??
+    opportunities.find(o => o.currentStage === 'Solution Designed' || o.currentStage === 'PRD Creation')?.id ??
+    opportunities.find(o => o.solution)?.id ??
+    opportunities[0]?.id ??
+    ''
+  );
+  const [generating, setGenerating] = useState(false);
+  const [message, setMessage] = useState('');
   const opp = opportunities.find(o => o.id === selectedId);
+
+  useEffect(() => {
+    if (opportunities.length > 0 && !opportunities.some((o) => o.id === selectedId)) {
+      setSelectedId(opportunities[0].id);
+    }
+  }, [opportunities, selectedId]);
+
+  useEffect(() => {
+    if (selectedId) setSelectedOpportunityId(selectedId);
+  }, [selectedId, setSelectedOpportunityId]);
+
+  const generateSolution = async (goNext = false) => {
+    if (!opp) return;
+    setGenerating(true);
+    setMessage('');
+    try {
+      setSelectedOpportunityId(opp.id);
+      await useStore.getState().runWorkflowAction(opp.id, 'generate-solution');
+      if (goNext) {
+        navigate(getNextStageRoute('Solution Designed'));
+      } else {
+        setMessage('Solution recommendation generated.');
+      }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Failed to generate solution.');
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in" id="solution-page">
@@ -30,6 +69,45 @@ const SolutionPage: React.FC = () => {
       </div>
 
       {opp && <ProgressStepper currentStage={opp.currentStage} />}
+
+      {opp && (
+        <AnimatedCard className="border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-orange-500/5">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-amber-400" />
+                <h3 className="text-sm font-semibold text-white">Solution Generator</h3>
+              </div>
+              <p className="text-xs text-gray-400 mt-1">Generate architecture, components, integrations, security, and monitoring recommendations.</p>
+            </div>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <button onClick={() => generateSolution(false)} disabled={generating} className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 text-sm">
+                <Sparkles className="w-4 h-4" />
+                {generating ? 'Generating...' : opp.solution ? 'Regenerate Enterprise Solution' : 'Generate Enterprise Solution'}
+              </button>
+              <button
+                onClick={() => opp.solution ? navigate(getNextStageRoute('Solution Designed')) : generateSolution(true)}
+                disabled={generating}
+                className="flex items-center gap-1.5 bg-emerald-500/20 text-emerald-400 text-xs font-semibold px-4 py-2 rounded-lg hover:bg-emerald-500/30 transition-colors disabled:opacity-50"
+              >
+                <CheckCircle className="w-3.5 h-3.5" />
+                {generating ? 'Completing...' : opp.solution ? 'Continue to ROI' : 'Generate and Continue'}
+              </button>
+              {opp.solution && (
+                <button
+                  onClick={() => navigate(getNextStageRoute('Solution Designed'))}
+                  disabled={generating}
+                  className="flex items-center gap-1.5 bg-blue-500/20 text-blue-400 text-xs font-semibold px-4 py-2 rounded-lg hover:bg-blue-500/30 transition-colors disabled:opacity-50"
+                >
+                  <ArrowRight className="w-3.5 h-3.5" />
+                  Go to Next Stage
+                </button>
+              )}
+            </div>
+          </div>
+          {message && <p className="mt-3 text-sm text-blue-300">{message}</p>}
+        </AnimatedCard>
+      )}
 
       {opp?.solution ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -85,7 +163,19 @@ const SolutionPage: React.FC = () => {
         </div>
       ) : (
         <AnimatedCard>
-          <p className="text-sm text-gray-400">Solution design not yet completed. Complete discovery first.</p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <p className="text-sm text-gray-400">Solution design not yet completed. Generate the enterprise solution recommendation to move into ROI.</p>
+            {opp && (
+              <button
+                onClick={() => generateSolution(true)}
+                disabled={generating}
+                className="flex items-center justify-center gap-1.5 bg-emerald-500/20 text-emerald-400 text-xs font-semibold px-4 py-2 rounded-lg hover:bg-emerald-500/30 transition-colors disabled:opacity-50"
+              >
+                <CheckCircle className="w-3.5 h-3.5" />
+                {generating ? 'Generating...' : 'Generate and Continue'}
+              </button>
+            )}
+          </div>
         </AnimatedCard>
       )}
     </div>

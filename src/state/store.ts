@@ -23,6 +23,7 @@ interface AppState {
   fetchOpportunities: () => Promise<void>;
   addOpportunity: (opp: AutomationOpportunity) => Promise<void>;
   updateOpportunity: (id: string, updates: Partial<AutomationOpportunity>) => Promise<void>;
+  runWorkflowAction: (id: string, action: string, payload?: Record<string, unknown>) => Promise<AutomationOpportunity>;
 
   // ── Selected ──────────────────────────────────
   selectedOpportunityId: string | null;
@@ -101,6 +102,31 @@ export const useStore = create<AppState>()(
           }));
         } catch (error) {
           console.error("Failed to update opportunity", error);
+          throw error;
+        }
+      },
+
+      runWorkflowAction: async (id, action, payload = {}) => {
+        try {
+          const res = await fetch(`/api/workflow/opportunities/${id}/actions/${action}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          if (!res.ok) {
+            const errorBody = await res.json().catch(() => null);
+            throw new Error(errorBody?.error ?? `Failed to run ${action}`);
+          }
+
+          const updatedOpp = await res.json();
+          set((state) => ({
+            opportunities: state.opportunities.map((o) =>
+              o.id === id ? { ...o, ...updatedOpp } : o
+            ),
+          }));
+          return updatedOpp;
+        } catch (error) {
+          console.error(`Failed to run workflow action ${action}`, error);
           throw error;
         }
       },

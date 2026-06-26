@@ -1,17 +1,47 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useStore } from '../../state/store';
-import { BarChart3, Sparkles } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowRight, BarChart3, Check, Sparkles } from 'lucide-react';
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Tooltip } from 'recharts';
 import AnimatedCard from '../../components/shared/AnimatedCard';
 import ScoreGauge from '../../components/shared/ScoreGauge';
 import Badge from '../../components/shared/Badge';
 import ExplainabilityPanel from '../../components/shared/ExplainabilityPanel';
 import ProgressStepper from '../../components/shared/ProgressStepper';
+import { getNextStageRoute } from '../../utils/pipeline';
 
 const ScoringPage: React.FC = () => {
-  const { opportunities } = useStore();
-  const [selectedId, setSelectedId] = useState<string>(opportunities[0]?.id ?? '');
+  const navigate = useNavigate();
+  const { opportunities, selectedOpportunityId, setSelectedOpportunityId } = useStore();
+  const [selectedId, setSelectedId] = useState<string>(selectedOpportunityId ?? opportunities[0]?.id ?? '');
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
   const opp = opportunities.find(o => o.id === selectedId);
+
+  useEffect(() => {
+    if (opportunities.length > 0 && !opportunities.some((o) => o.id === selectedId)) {
+      setSelectedId(opportunities[0].id);
+    }
+  }, [opportunities, selectedId]);
+
+  useEffect(() => {
+    if (selectedId) setSelectedOpportunityId(selectedId);
+  }, [selectedId, setSelectedOpportunityId]);
+
+  const approveScoring = async () => {
+    if (!opp) return;
+    setSaving(true);
+    setMessage('');
+    try {
+      setSelectedOpportunityId(opp.id);
+      await useStore.getState().runWorkflowAction(opp.id, 'generate-score');
+      navigate(getNextStageRoute('Scoring'));
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Failed to approve scoring.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const radarData = opp?.score ? [
     { subject: 'Business Impact', value: opp.score.dimensions.businessImpact },
@@ -60,6 +90,26 @@ const ScoringPage: React.FC = () => {
                 </div>
                 <ScoreGauge score={opp.score.totalScore} label="Score" size="md" />
               </div>
+
+              <div className="flex flex-wrap items-center gap-2 pb-4 mb-4 border-b border-white/10">
+                <button
+                  onClick={approveScoring}
+                  disabled={saving}
+                  className="flex items-center gap-1.5 bg-emerald-500/20 text-emerald-400 text-xs font-semibold px-4 py-2 rounded-lg hover:bg-emerald-500/30 transition-colors disabled:opacity-50"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  {saving ? 'Approving...' : 'Approve for Discovery'}
+                </button>
+                <button
+                  onClick={() => navigate(getNextStageRoute('Scoring'))}
+                  disabled={saving}
+                  className="flex items-center gap-1.5 bg-blue-500/20 text-blue-400 text-xs font-semibold px-4 py-2 rounded-lg hover:bg-blue-500/30 transition-colors disabled:opacity-50"
+                >
+                  <ArrowRight className="w-3.5 h-3.5" />
+                  Go to Next Stage
+                </button>
+              </div>
+              {message && <p className="mb-4 text-sm text-red-400">{message}</p>}
 
               {/* Dimension Breakdown */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -129,7 +179,20 @@ const ScoringPage: React.FC = () => {
         </div>
       ) : (
         <AnimatedCard>
-          <p className="text-sm text-gray-400">Scoring not yet performed. Complete qualification first.</p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <p className="text-sm text-gray-400">Scoring not yet performed. Complete qualification first or generate the score now.</p>
+            {opp && (
+              <button
+                onClick={approveScoring}
+                disabled={saving}
+                className="flex items-center justify-center gap-1.5 bg-blue-500/20 text-blue-400 text-xs font-semibold px-4 py-2 rounded-lg hover:bg-blue-500/30 transition-colors disabled:opacity-50"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                {saving ? 'Generating...' : 'Generate Score'}
+              </button>
+            )}
+          </div>
+          {message && <p className="mt-3 text-sm text-red-400">{message}</p>}
         </AnimatedCard>
       )}
     </div>

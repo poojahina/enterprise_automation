@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Executive Briefing: Automation Opportunity Intake Hub</title>
+    <meta name="description" content="Comprehensive architecture and logic walkthrough of the AI-driven Enterprise Automation Opportunity Intake Hub.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Mermaid JS -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --bg-base: #070b14;
+            --bg-surface: #0f1629;
+            --bg-glass: rgba(255, 255, 255, 0.03);
+            --bg-glass-hover: rgba(255, 255, 255, 0.07);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(99, 102, 241, 0.4);
+            
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-accent: #818cf8;
+            
+            --accent-primary: #6366f1;
+            --accent-primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --accent-success: #10b981;
+            --accent-warning: #f59e0b;
+            --accent-danger: #ef4444;
+            --accent-info: #0ea5e9;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 15% 20%, rgba(99, 102, 241, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 85% 80%, rgba(168, 85, 247, 0.12) 0%, transparent 40%);
+            background-attachment: fixed;
+        }
+
+        /* App Layout */
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 280px;
+            background: var(--bg-surface);
+            border-right: 1px solid var(--border-color);
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            padding: 1.5rem 1rem;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(20px);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .brand-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: var(--accent-primary-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: white;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+        }
+
+        .brand-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-section-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin: 1rem 0.5rem 0.5rem;
+            font-weight: 600;
+        }
+
+        .nav-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            overflow-y: auto;
+            flex: 1;
+            padding-right: 0.25rem;
+        }
+
+        .nav-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .nav-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .nav-item a {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.65rem 0.75rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 0.92rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .nav-item a:hover {
+            background: var(--bg-glass-hover);
+            color: var(--text-main);
+            transform: translateX(3px);
+        }
+
+        .nav-item.active a {
+            background: var(--accent-primary);
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .stage-badge {
+            font-size: 0.7rem;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            margin-left: auto;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            margin-left: 280px;
+            flex: 1;
+            padding: 3rem 4rem;
+            max-width: 1300px;
+        }
+
+        /* Hero Header */
+        .hero {
+            position: relative;
+            padding: 3rem;
+            border-radius: 20px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-color);
+            margin-bottom: 3rem;
+            overflow: hidden;
+            backdrop-filter: blur(12px);
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--accent-primary-gradient);
+        }
+
+        .badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0.85rem;
+            border-radius: 9999px;
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            color: var(--text-accent);
+            font-size: 0.82rem;
+            font-weight: 600;
+            margin-bottom: 1.25rem;
+        }
+
+        .hero h1 {
+            font-size: 2.75rem;
+            font-weight: 700;
+            line-height: 1.15;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.15rem;
+            color: var(--text-muted);
+            max-width: 800px;
+            margin-bottom: 2rem;
+        }
+
+        /* KPI Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1));
+            gap: 1.5rem;
+        }
+
+        .kpi-card {
+            background: rgba(15, 22, 41, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 1.5rem;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--border-glow);
+        }
+
+        .kpi-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-value {
+            font-size: 1.85rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .kpi-desc {
+            font-size: 0.8rem;
+            color: var(--accent-success);
+            margin-top: 0.25rem;
+            font-weight: 500;
+        }
+
+        /* Sections */
+        .section {
+            margin-bottom: 5rem;
+            scroll-margin-top: 2rem;
+        }
+
+        .section-header {
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+
+        .section-title::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 28px;
+            border-radius: 4px;
+            background: var(--accent-primary-gradient);
+        }
+
+        .section-subtitle {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+        }
+
+        /* Glass Cards */
+        .glass-card {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(12px);
+            position: relative;
+        }
+
+        .glass-card h3 {
+            font-size: 1.35rem;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Grid Layouts */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            .main-content {
+                padding: 2rem;
+            }
+        }
+
+        /* Flow Diagram Container */
+        .mermaid-container {
+            background: rgba(10, 15, 29, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            overflow-x: auto;
+            display: flex;
+            justify-content: center;
+            margin: 2rem 0;
+        }
+
+        /* Tables */
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 1.5rem 0;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .data-table th, .data-table td {
+            padding: 1rem 1.25rem;
+            text-align: left;
+        }
+
+        .data-table th {
+            background: rgba(255, 255, 255, 0.04);
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table td {
+            background: rgba(15, 22, 41, 0.4);
+            font-size: 0.95rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tr:hover td {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        /* Formula / Code Boxes */
+        .code-box {
+            background: #080c17;
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            border-radius: 10px;
+            padding: 1.25rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: #e2e8f0;
+            margin: 1rem 0;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .code-box-label {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: rgba(99, 102, 241, 0.2);
+            color: var(--text-accent);
+            font-size: 0.7rem;
+            padding: 0.2rem 0.6rem;
+            border-bottom-left-radius: 8px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+
+        /* Alert Callouts */
+        .callout {
+            padding: 1.25rem 1.5rem;
+            border-radius: 12px;
+            margin: 1.5rem 0;
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .callout-info {
+            background: rgba(14, 165, 233, 0.1);
+            border-left: 4px solid var(--accent-info);
+        }
+
+        .callout-warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 4px solid var(--accent-warning);
+        }
+
+        .callout-success {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 4px solid var(--accent-success);
+        }
+
+        .callout-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            color: white;
+        }
+
+        /* Interactive Stage Accordion */
+        .stage-card {
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            margin-bottom: 1.25rem;
+            background: rgba(15, 22, 41, 0.5);
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .stage-header {
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid transparent;
+        }
+
+        .stage-header:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .stage-header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .stage-num {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: rgba(99, 102, 241, 0.2);
+            color: var(--text-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stage-title {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .stage-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .role-tag {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 999px;
+            font-weight: 600;
+        }
+
+        .role-client { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .role-coe { background: rgba(139, 92, 246, 0.15); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.3); }
+        .role-exec { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+
+        .chevron {
+            transition: transform 0.3s ease;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+        }
+
+        .stage-body {
+            padding: 1.5rem;
+            display: none;
+            border-top: 1px solid var(--border-color);
+            background: rgba(7, 11, 20, 0.4);
+        }
+
+        .stage-card.open {
+            border-color: rgba(99, 102, 241, 0.4);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .stage-card.open .chevron {
+            transform: rotate(180deg);
+        }
+
+        .stage-card.open .stage-body {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .logic-point {
+            margin-bottom: 1rem;
+        }
+
+        .logic-point h4 {
+            color: var(--text-accent);
+            font-size: 0.95rem;
+            margin-bottom: 0.25rem;
+            font-weight: 600;
+        }
+
+        /* Q&A Cards */
+        .qa-card {
+            background: rgba(15, 22, 41, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .qa-q {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #f59e0b;
+            margin-bottom: 0.75rem;
+        }
+
+        .qa-a {
+            color: var(--text-main);
+            font-size: 0.98rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-icon">AI</div>
+            <div class="brand-title">Intake Hub Brief</div>
+        </div>
+
+        <div class="nav-section-label">Presentation Agenda</div>
+        <ul class="nav-list">
+            <li class="nav-item active"><a href="#exec-summary">📊 Executive Summary</a></li>
+            <li class="nav-item"><a href="#lifecycle-flow">🔄 12-Stage Lifecycle Flow</a></li>
+            <li class="nav-item"><a href="#stage-breakdown">🔍 Detailed Stage Walkthrough</a></li>
+            <li class="nav-item"><a href="#core-capabilities">🏛️ Core Capabilities & Seams</a></li>
+            <li class="nav-item"><a href="#qa-cheatsheet">🎯 Leadership Q&A Prep</a></li>
+        </ul>
+
+        <div style="margin-top: auto; padding: 1rem; background: rgba(255,255,255,0.02); border-radius: 10px; border: 1px solid var(--border-color);">
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Target System Version</div>
+            <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-accent); font-family: 'JetBrains Mono', monospace;">v1.0.0 Enterprise Azure</div>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        <!-- Hero Header -->
+        <div class="hero" id="exec-summary">
+            <div class="badge-pill">✨ C-Suite & Leadership Architecture Review</div>
+            <h1>Automation Opportunity Intake Hub</h1>
+            <p>Transforming enterprise automation intake from unstructured email/spreadsheet clutter into an objective, AI-scored, ROI-backed, 100% sprint-ready software factory pipeline.</p>
+            
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">Intake-to-Delivery Velocity</div>
+                    <div class="kpi-value">60% Faster</div>
+                    <div class="kpi-desc">↑ Standardized AI Triage</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Objective Funding Gate</div>
+                    <div class="kpi-value">100% ROI Backed</div>
+                    <div class="kpi-desc">✓ 3-Year NPV Validation</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Stalled Sprint Rate</div>
+                    <div class="kpi-value">0% Blocked</div>
+                    <div class="kpi-desc">★ Strict 9-Gate Readiness</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 1: Architecture Overview -->
+        <section class="section" id="lifecycle-flow">
+            <div class="section-header">
+                <h2 class="section-title">End-to-End 12-Stage Lifecycle Architecture</h2>
+                <p class="section-subtitle">A standardized assembly line that qualifies raw ideas before development resources are committed.</p>
+            </div>
+
+            <div class="glass-card">
+                <h3>🔄 High-Level Pipeline Flow State Machine</h3>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Every record moves sequentially through 12 enforced workflow states. Color coding indicates role ownership across the lifecycle:</p>
+                
+                <div class="mermaid-container">
+                    <div class="mermaid">
+                        graph LR
+                            classDef client fill:#1e40af,stroke:#3b82f6,color:#fff;
+                            classDef coe fill:#6b21a8,stroke:#a855f7,color:#fff;
+                            classDef exec fill:#065f46,stroke:#10b981,color:#fff;
+
+                            S1[1. Submit]:::client --> S2[2. Classify]:::client
+                            S2 --> S3[3. Qualify]:::client
+                            S3 --> S4[4. Score]:::client
+                            S4 --> S5[5. Discovery]:::coe
+                            S5 --> S6[6. PRD]:::coe
+                            S6 --> S7[7. Solution]:::coe
+                            S7 --> S8[8. ROI]:::exec
+                            S8 --> S9[9. Priority]:::exec
+                            S9 --> S10[10. Pods]:::coe
+                            S10 --> S11[11. Sprint Gate]:::coe
+                            S11 --> S12[12. Docs/Jira]:::coe
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 2rem; justify-content: center; margin-top: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;"><span style="width: 12px; height: 12px; background: #3b82f6; border-radius: 3px;"></span> Client / Citizen Owned</div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;"><span style="width: 12px; height: 12px; background: #a855f7; border-radius: 3px;"></span> Automation COE Owned</div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;"><span style="width: 12px; height: 12px; background: #10b981; border-radius: 3px;"></span> Executive Steering Committee</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Detailed Stage Walkthrough -->
+        <section class="section" id="stage-breakdown">
+            <div class="section-header">
+                <h2 class="section-title">Detailed Stage Walkthrough & Applied Logic</h2>
+                <p class="section-subtitle">Click any stage below to inspect user actions, algorithmic rule engines, and exact mathematical formulas.</p>
+            </div>
+
+            <!-- Stage 1 -->
+            <div class="stage-card" onclick="toggleStage(this)">
+                <div class="stage-header">
+                    <div class="stage-header-left">
+                        <div class="stage-num">01</div>
+                        <div class="stage-title">Idea Submission (`/intake`)</div>
+                    </div>
+                    <div class="stage-meta">
+                        <span class="role-tag role-client">Business User</span>
+                        <span class="chevron">▼</span>
+                    </div>
+                </div>
+                <div class="stage-body">
+                    <div class="grid-2">
+                        <div>
+                            <div class="logic-point">
+                                <h4>👤 What We Are Doing</h4>
+                                <p>Replaced complex intake spreadsheets with an intuitive 4-step guided wizard. The submitter inputs process names, business units, manual effort hours, error rates, and software landscape.</p>
+                            </div>
+                            <div class="logic-point">
+                                <h4>📥 Captured Baseline Metrics</h4>
+                                <p><code>volumePerMonth</code>, <code>manualEffortHours</code>, <code>errorRatePercent</code>, <code>usersImpacted</code>, and <code>avgProcessingTimeMinutes</code>.</p>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="code-box">
+                                <div class="code-box-label">SYSTEM INITIALIZATION</div>
+// On wizard submit (opportunity.ts):
+{
+  id: randomUUID(),
+  processName: payload.processName,
+  currentStage: "Submitted",
+  status: "Submitted",
+  auditTrail: [{ action: "Opportunity Created" }]
+}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stage 2 -->
+            <div class="stage-card" onclick="toggleStage(this)">
+                <div class="stage-header">
+                    <div class="stage-header-left">
+                        <div class="stage-num">02</div>
+                        <div class="stage-title">Automation Type Classification (`/classification`)</div>
+                    </div>
+                    <div class="stage-meta">
+                        <span class="role-tag role-client">AI Engine / COE Analyst</span>
+                        <span class="chevron">▼</span>
+                    </div>
+                </div>
+                <div class="stage-body">
+                    <p style="margin-bottom: 1.5rem;">Eliminates architectural mismatch by scoring process characteristics against 4 distinct automation tracks using a deterministic rule engine (<code>classifyAutomationType.ts</code>):</p>
+                    
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Automation Track</th>
+                                <th>Scoring Trigger Conditions</th>
+                                <th>Primary Best-Fit Use Case</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="font-weight: 600; color: var(--accent-primary);">Hyperautomation / Agentic</td>
+                                <td>Autonomy $\ge 4$ (+30), Complex Reasoning (+20), Multi-System Orchestration (+20), GenAI (+15)</td>
+                                <td>Autonomous multi-agent workflows spanning CRM, ERP, and legacy billing.</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 600; color: #0ea5e9;">Intelligent Automation (IA)</td>
+                                <td>Document Understanding/OCR (+30), GenAI without Multi-System (+25), Unstructured Data (+20)</td>
+                                <td>Invoice processing, contract review, and email triage.</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 600; color: #10b981;">Robotic Process Auto (RPA)</td>
+                                <td>Strictly Rule-Based (+30), Structured Data (+25), No Reasoning (+20), Low Autonomy (+10)</td>
+                                <td>High-volume data entry and deterministic screen scraping.</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 600; color: #f59e0b;">Power Platform</td>
+                                <td>Workflow Automation (+30), Existing APIs (+20), Low Complexity (+20)</td>
+                                <td>Internal approval notifications and basic departmental forms.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="code-box">
+                        <div class="code-box-label">CONFIDENCE SCORE FORMULA</div>
+ConfidenceScore (%) = Math.min(100, Math.round((WinningTrackScore / (MaxPossibleScore + 20)) * 100))
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stage 3 -->
+            <div class="stage-card" onclick="toggleStage(this)">
+                <div class="stage-header">
+                    <div class="stage-header-left">
+                        <div class="stage-num">03</div>
+                        <div class="stage-title">L1 Qualification Triage Gate (`/qualification`)</div>
+                    </div>
+                    <div class="stage-meta">
+                        <span class="role-tag role-client">Automated Gatekeeper</span>
+                        <span class="chevron">▼</span>
+                    </div>
+                </div>
+                <div class="stage-body">
+                    <div class="grid-2">
+                        <div>
+                            <div class="logic-point">
+                                <h4>🛡️ Bouncer Mechanism</h4>
+                                <p>Immediately filters out unfeasible or low-ROI ideas before developer cycles are wasted. Evaluates 7 strict weighted criteria out of 100 total points.</p>
+                            </div>
+                            <div class="logic-point">
+                                <h4>⚖️ Mandatory Thresholds</h4>
+                                <p>• Minimum Volume $\ge 50$ tx/month (20 pts)<br>• Manual Effort $\ge 10$ hours/month (20 pts)<br>• Time Savings $\ge 5$ hrs/mo OR Cost Savings $\ge \$500$/mo (15 pts)</p>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="code-box">
+                                <div class="code-box-label">TRIAGE DECISION MATRIX</div>
+// In qualifyOpportunity.ts:
+if (overallScore >= 70 && failedCount <= 1) {
+  status = 'Qualified'; // Advance to Scoring
+} else if (overallScore >= 40 || missingInfo.length > 0) {
+  status = 'Needs More Information'; // Halt flow & notify submitter
+} else {
+  status = 'Rejected'; // Archive opportunity
+}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stage 4 -->
+            <div class="stage-card" onclick="toggleStage(this)">
+                <div class="stage-header">
+                    <div class="stage-header-left">
+                        <div class="stage-num">04</div>
+                        <div class="stage-title">Priority Scoring (`/scoring`)</div>
+                    </div>
+                    <div class="stage-meta">
+                        <span class="role-tag role-client">COE Director</span>
+                        <span class="chevron">▼</span>
+                    </div>
+                </div>
+                <div class="stage-body">
+                    <p style="margin-bottom: 1rem;">Calculates an objective priority ranking out of 100 across four weighted business dimensions (<code>calculatePriorityScore.ts</code>):</p>
+                    
+                    <div class="code-box">
+                        <div class="code-box-label">4-DIMENSION WEIGHTED MATH</div>
+TotalScore = (BusinessImpact * 0.30) + (StrategicAlignment * 0.20) + (Feasibility * 0.25) + (ROIPotential * 0.25)
+                    </div>
+
+                    <div class="grid-2" style="margin-top: 1.5rem;">
+                        <div>
+                            <h4 style="color: var(--accent-warning); margin-bottom: 0.5rem;">📉 Feasibility Penalty Deductions</h4>
+                            <p style="font-size: 0.92rem; color: var(--text-muted);">Starts at 100 points, deducting for friction:<br>• Unstructured Data: <code>-20 pts</code><br>• High Process Complexity: <code>-25 pts</code><br>• Multi-System Orchestration: <code>-15 pts</code><br>• No API Availability: <code>-15 pts</code></p>
+                        </div>
+                        <div>
+                            <h4 style="color: var(--accent-info); margin-bottom: 0.5rem;">👕 Complexity T-Shirt Mapping</h4>
+                            <p style="font-size: 0.92rem; color: var(--text-muted);">Maps accumulated technical friction points:<br>• <strong>XS:</strong> $\le 5$ friction points<br>• <strong>S:</strong> 6–9 points | <strong>M:</strong> 10–13 points<br>• <strong>L:</strong> 14–17 points | <strong>XL:</strong> $\ge 18$ points</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stage 5 & 6 -->
+            <div class="stage-card" onclick="toggleStage(this)">
+                <div class="stage-header">
+                    <div class="stage-header-left">
+                        <div class="stage-num">05 & 06</div>
+                        <div class="stage-title">L2 Discovery & AI PRD Drafting (`/discovery`, `/prd`)</div>
+                    </div>
+                    <div class="stage-meta">
+                        <span class="role-tag role-coe">Business Analyst</span>
+                        <span class="chevron">▼</span>
+                    </div>
+                </div>
+                <div class="stage-body">
+                    <div class="grid-2">
+                        <div>
+                            <div class="logic-point">
+                                <h4>🎙️ Shared Context Upload Store</h4>
+                                <p>BAs upload meeting videos, audio transcripts, or reference specs. Video files automatically extract speech-to-text. This context is persisted against the record ID.</p>
+                            </div>
+                            <div class="logic-point">
+                                <h4>📝 AI Drafting Gateway</h4>
+                                <p>The backend AI gateway synthesizes the uploaded transcripts alongside mapped <code>asIsSteps</code> to generate an editable Product Requirements Document (PRD).</p>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="callout callout-info">
+                                <div>
+                                    <div class="callout-title">Traceability Guarantee</div>
+                                    <p style="font-size: 0.88rem;">The UI displays exact citations: <em>"This PRD draft synthesized context from: discovery_interview.mp4 and billing_rules.pdf"</em>.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stage 7 & 8 -->
+            <div class="stage-card" onclick="toggleStage(this)">
+                <div class="stage-header">
+                    <div class="stage-header-left">
+                        <div class="stage-num">07 & 08</div>
+                        <div class="stage-title">Solution Architecture & Financial ROI (`/solution`, `/roi`)</div>
+                    </div>
+                    <div class="stage-meta">
+                        <span class="role-tag role-exec">Finance & Architects</span>
+                        <span class="chevron">▼</span>
+                    </div>
+                </div>
+                <div class="stage-body">
+                    <p style="margin-bottom: 1rem;">Architects define technical components and estimated story points. Finance validates hard financial return mathematics (<code>calculateROI.ts</code>):</p>
+
+                    <div class="grid-2">
+                        <div class="code-box">
+                            <div class="code-box-label">PAYBACK & FIRST-YEAR ROI</div>
+NetAnnualBenefit = AnnualSavings - AnnualSupportCost
+
+ROIPercentage = ((NetAnnualBenefit - ImplementationCost) / ImplementationCost) * 100
+
+PaybackMonths = ImplementationCost / (NetAnnualBenefit / 12)
+                        </div>
+                        <div class="code-box">
+                            <div class="code-box-label">3-YEAR DISCOUNTED NPV (r = 10%)</div>
+// Standard corporate cash flow discounting:
+let npv = -ImplementationCost;
+const discountRate = 0.10;
+
+for (let year = 1; year <= 3; year++) {
+  npv += NetAnnualBenefit / Math.pow(1 + discountRate, year);
+}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stage 9 & 10 -->
+            <div class="stage-card" onclick="toggleStage(this)">
+                <div class="stage-header">
+                    <div class="stage-header-left">
+                        <div class="stage-num">09 & 10</div>
+                        <div class="stage-title">Prioritization Board & Pod Allocation (`/prioritization`, `/pods`)</div>
+                    </div>
+                    <div class="stage-meta">
+                        <span class="role-tag role-coe">Steering Committee</span>
+                        <span class="chevron">▼</span>
+                    </div>
+                </div>
+                <div class="stage-body">
+                    <div class="grid-2">
+                        <div>
+                            <div class="logic-point">
+                                <h4>🫧 Executive Interactive Matrix</h4>
+                                <p>Executives sequence backlog epics using bubble charts comparing Risk/Complexity vs. Financial Reward.</p>
+                            </div>
+                            <div class="logic-point">
+                                <h4>🧩 Squad Capacity Matching Rule</h4>
+                                <p>Matches classified track to squad catalogs (<em>Agentic Squad, RPA COE, IA Lab, Power Guild</em>). Routes to matching squad if available bandwidth <code>> 20%</code>, else falls back to pod with highest capacity.</p>
+                            </div>
+                        </div>
+                        <div>
+                            <table class="data-table">
+                                <thead>
+                                    <tr><th>Delivery Squad</th><th>Specialization</th><th>Bandwidth</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>Agentic AI Squad</td><td>Hyperautomation</td><td>40% Avail</td></tr>
+                                    <tr><td>RPA COE Team</td><td>Traditional RPA</td><td>60% Avail</td></tr>
+                                    <tr><td>IA Lab</td><td>Document AI / OCR</td><td>55% Avail</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stage 11 & 12 -->
+            <div class="stage-card" onclick="toggleStage(this)">
+                <div class="stage-header">
+                    <div class="stage-header-left">
+                        <div class="stage-num">11 & 12</div>
+                        <div class="stage-title">Sprint Readiness Gates & PM Sync (`/sprint-readiness`, `/documents`)</div>
+                    </div>
+                    <div class="stage-meta">
+                        <span class="role-tag role-coe">Scrum Master & Squads</span>
+                        <span class="chevron">▼</span>
+                    </div>
+                </div>
+                <div class="stage-body">
+                    <p style="margin-bottom: 1rem;">Performs a definitive blocker check across 9 strict gate flags (<code>determineSprintReadiness.ts</code>) before generating Jira epics:</p>
+
+                    <div class="callout callout-warning">
+                        <div>
+                            <div class="callout-title">Zero Stalled Sprints Guarantee</div>
+                            <p style="font-size: 0.9rem;">If any gate (e.g., Compliance/GDPR cleared, ROI approved, PRD signed) is false, status turns <strong>Blocked</strong> and lists specific blocker descriptions so developers never start blocked work.</p>
+                        </div>
+                    </div>
+
+                    <p style="font-size: 0.95rem; color: var(--text-muted);">Once green, the platform invokes pluggable connectors (<code>IProjectManagementConnector</code>) to push Epics/Stories to <strong>Azure DevOps / Jira</strong> and sync docs to <strong>SharePoint</strong> via Microsoft Graph API.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Core Capabilities & Seams -->
+        <section class="section" id="core-capabilities">
+            <div class="section-header">
+                <h2 class="section-title">Platform Governance & Enterprise Seams</h2>
+                <p class="section-subtitle">Architectural design patterns built for extension, security, and enterprise integration.</p>
+            </div>
+
+            <div class="grid-2">
+                <div class="glass-card">
+                    <h3>⚙️ Dynamic Stage Configuration</h3>
+                    <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1rem;">Admins can toggle client-owned stages (Classification, Qualification, Scoring, ROI) OFF at runtime via Settings UI without code changes.</p>
+                    <h4 style="color: var(--accent-accent); font-size: 0.9rem;">Auto-Skip Seam Behavior:</h4>
+                    <p style="color: var(--text-muted); font-size: 0.88rem;">• State machine auto-advances record to next enabled stage.<br>• Audit trail records explicit status: <code>"N/A — performed externally by client organization"</code>.<br>• Downstream tools degrade gracefully (e.g., Prioritization omits missing ROI score without erroring).</p>
+                </div>
+
+                <div class="glass-card">
+                    <h3>🏛️ Enterprise AI Gateway</h3>
+                    <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1rem;">No frontend or backend domain controller calls specific LLM SDKs directly. All cognitive requests route through an abstracted gateway.</p>
+                    <h4 style="color: var(--accent-accent); font-size: 0.9rem;">Settings-Driven Backbones:</h4>
+                    <p style="color: var(--text-muted); font-size: 0.88rem;">• Pluggable connectors for <strong>Azure OpenAI, AWS Bedrock, and Google Vertex AI</strong>.<br>• Credentials encrypted at rest / reference Azure Key Vault.<br>• Immediate pass/fail connection testing in Settings.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Leadership Q&A Prep -->
+        <section class="section" id="qa-cheatsheet">
+            <div class="section-header">
+                <h2 class="section-title">Leadership Q&A Cheat-Sheet</h2>
+                <p class="section-subtitle">Battle-tested responses for tough questions from senior leadership.</p>
+            </div>
+
+            <div class="qa-card">
+                <div class="qa-q">❓ CEO / CFO: "How does this platform objectively prevent us from wasting money on low-value automation ideas?"</div>
+                <div class="qa-a">💡 <strong>Winning Response:</strong> "It enforces hard financial gates. In Stage 3, unviable ideas are auto-rejected by volume thresholds. In Stage 8, our 3-year discounted Net Present Value (NPV at 10% discount rate) and Break-Even calculations must mathematically prove positive cash flow before engineering Pods are allocated."</div>
+            </div>
+
+            <div class="qa-card">
+                <div class="qa-q">❓ CIO / CTO: "What happens when AI models evolve or our Azure OpenAI instance experiences downtime?"</div>
+                <div class="qa-a">💡 <strong>Winning Response:</strong> "We decoupled our application logic from specific AI providers. We built an abstracted Enterprise LLM Gateway. In Admin Settings, we can switch our AI backbone from Azure OpenAI to AWS Bedrock or Google Vertex AI with a single toggle and zero code changes."</div>
+            </div>
+
+            <div class="qa-card">
+                <div class="qa-q">❓ COE Director: "Some business units perform their own discovery and ROI externally. Does your rigid 12-step flow block them?"</div>
+                <div class="qa-a">💡 <strong>Winning Response:</strong> "No. Our Stage Configuration registry allows toggling client-owned stages off. The state machine auto-skips disabled stages, logs them transparently in the immutable audit log, and downstream tools degrade gracefully without throwing errors."</div>
+            </div>
+
+            <div class="qa-card">
+                <div class="qa-q">❓ CISO / Head of Security: "Where are integration credentials and sensitive uploaded discovery recordings stored?"</div>
+                <div class="qa-a">💡 <strong>Winning Response:</strong> "Secrets are never stored in plaintext source code; they reference Azure Key Vault. All multi-modal uploads are stored within authenticated relational stores governed by strict Role-Based Access Control (RBAC) and full audit trail logging."</div>
+            </div>
+        </section>
+
+        <footer style="text-align: center; padding: 3rem 0; color: var(--text-muted); font-size: 0.85rem; border-top: 1px solid var(--border-color);">
+            Automation Opportunity Intake Hub Executive Presentation • Built for C-Suite Briefings
+        </footer>
+    </main>
+</div>
+
+<script>
+    // Initialize Mermaid
+    mermaid.initialize({ 
+        startOnLoad: true, 
+        theme: 'dark',
+        securityLevel: 'loose',
+        fontFamily: 'Outfit'
+    });
+
+    // Accordion Toggle Logic
+    function toggleStage(card) {
+        card.classList.toggle('open');
+    }
+
+    // Smooth Scroll Active Navigation
+    const navItems = document.querySelectorAll('.nav-item');
+    window.addEventListener('scroll', () => {
+        let current = '';
+        const sections = document.querySelectorAll('.section, .hero');
+        
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            if (scrollY >= sectionTop - 150) {
+                current = section.getAttribute('id');
+            }
+        });
+
+        navItems.forEach(item => {
+            item.classList.remove('active');
+            const link = item.querySelector('a').getAttribute('href').substring(1);
+            if (link === current) {
+                item.classList.add('active');
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

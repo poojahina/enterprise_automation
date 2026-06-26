@@ -12,8 +12,8 @@ async function seed() {
       description: 'Automate the extraction of data from PDF invoices and entry into SAP.',
       businessUnit: 'Finance',
       submitter: 'Jane Doe',
-      currentStage: 'Intake',
-      pipelineStatus: 'Active',
+      currentStage: 'Submitted',
+      status: 'Active',
       classification: {
         recommendedType: 'Intelligent Automation',
         confidenceScore: 92,
@@ -96,7 +96,7 @@ async function seed() {
         { name: 'Security Review', status: 'Passed', details: 'No sensitive data exposed', checkedBy: 'SecOps', checkedDate: '2026-06-20' }
       ],
       auditTrail: [
-        { id: '1', timestamp: new Date().toISOString(), action: 'Opportunity Created', performedBy: 'Jane Doe', role: 'Business User', details: 'Initial submission', stage: 'Intake' }
+        { id: '1', timestamp: new Date().toISOString(), action: 'Opportunity Created', performedBy: 'Jane Doe', role: 'Business User', details: 'Initial submission', stage: 'Submitted' }
       ]
     },
     {
@@ -105,8 +105,8 @@ async function seed() {
       description: 'Automate AD account creation, software assignment, and email welcome.',
       businessUnit: 'HR',
       submitter: 'John Smith',
-      currentStage: 'Scoring',
-      pipelineStatus: 'Active',
+      currentStage: 'Scored',
+      status: 'Active',
       classification: {
         recommendedType: 'Power Automate/Power Platform',
         confidenceScore: 88,
@@ -141,8 +141,8 @@ async function seed() {
       description: 'Use GenAI to read incoming support tickets, classify them, and route them to the correct department.',
       businessUnit: 'Customer Success',
       submitter: 'Sarah Connor',
-      currentStage: 'Intake',
-      pipelineStatus: 'Active',
+      currentStage: 'Submitted',
+      status: 'Active',
       classification: {
         recommendedType: 'Hyperautomation/Agentic Automation',
         confidenceScore: 85,
@@ -182,7 +182,7 @@ async function seed() {
           id: opp.id,
           processName: opp.processName,
           currentStage: opp.currentStage,
-          status: opp.pipelineStatus,
+          status: opp.status,
           data: JSON.stringify(opp)
         }
       });
@@ -193,7 +193,7 @@ async function seed() {
         data: {
           processName: opp.processName,
           currentStage: opp.currentStage,
-          status: opp.pipelineStatus,
+          status: opp.status,
           data: JSON.stringify(opp)
         }
       });

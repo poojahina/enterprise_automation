@@ -8,7 +8,7 @@ import ScoreGauge from '../../components/shared/ScoreGauge';
 import ExplainabilityPanel from '../../components/shared/ExplainabilityPanel';
 import ProgressStepper from '../../components/shared/ProgressStepper';
 import type { AutomationType, AutomationOpportunity } from '../../models/types';
-import { getNextStageRoute, getNextStageStatus } from '../../utils/pipeline';
+import { getNextStageRoute } from '../../utils/pipeline';
 
 const TYPE_COLORS: Record<AutomationType, string> = {
   'Hyperautomation/Agentic Automation': '#a78bfa',
@@ -46,12 +46,34 @@ const ClassificationPage: React.FC = () => {
     setSaveError('');
 
     try {
-      await useStore.getState().updateOpportunity(opp.id, {
-        currentStage: getNextStageStatus('Classification')
-      });
+      await useStore.getState().runWorkflowAction(opp.id, 'accept-classification');
       navigate(nextStage);
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : 'Failed to accept classification.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleOverride = async () => {
+    if (!opp) return;
+    const requestedType = window.prompt(
+      'Override classification type',
+      opp.classification?.alternatives[0]?.type ?? opp.classification?.recommendedType ?? 'RPA'
+    );
+
+    if (!requestedType) return;
+
+    setSaving(true);
+    setSaveError('');
+
+    try {
+      await useStore.getState().runWorkflowAction(opp.id, 'override-classification', {
+        recommendedType: requestedType,
+        reasoning: 'Classification manually overridden from the Classification workspace.',
+      });
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Failed to override classification.');
     } finally {
       setSaving(false);
     }
@@ -145,7 +167,7 @@ const ClassificationPage: React.FC = () => {
                   <button onClick={handleAccept} disabled={saving} className="flex items-center gap-1.5 bg-emerald-500/20 text-emerald-400 text-xs font-semibold px-4 py-2 rounded-lg hover:bg-emerald-500/30 transition-colors disabled:opacity-50">
                     <Check className="w-3.5 h-3.5" /> {saving ? 'Accepting...' : 'Accept Classification'}
                   </button>
-                  <button className="flex items-center gap-1.5 bg-white/5 text-gray-300 text-xs font-semibold px-4 py-2 rounded-lg hover:bg-white/10 transition-colors">
+                  <button onClick={handleOverride} disabled={saving} className="flex items-center gap-1.5 bg-white/5 text-gray-300 text-xs font-semibold px-4 py-2 rounded-lg hover:bg-white/10 transition-colors disabled:opacity-50">
                     Override
                   </button>
                 </div>

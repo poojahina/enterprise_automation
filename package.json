@@ -5,13 +5,16 @@
   "type": "module",
   "scripts": {
     "dev:frontend": "vite",
-    "dev:backend": "tsx watch server/index.ts",
+    "dev:backend": "dotnet run --project backend-dotnet/EnterpriseAutomation.Api.csproj --launch-profile http",
+    "dev:backend:node": "tsx watch server/index.ts",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "prisma:generate": "prisma generate --schema=server/prisma/schema.prisma",
-    "prisma:push": "prisma db push --schema=server/prisma/schema.prisma"
+    "prisma:push": "prisma db push --schema=server/prisma/schema.prisma",
+    "seed": "tsx server/seed.ts",
+    "seed:opportunities": "tsx server/seedOpportunities.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

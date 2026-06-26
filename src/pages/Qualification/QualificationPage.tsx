@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useStore } from '../../state/store';
+import { useNavigate } from 'react-router-dom';
 import { CheckSquare, Check, X, AlertTriangle } from 'lucide-react';
 import AnimatedCard from '../../components/shared/AnimatedCard';
 import ScoreGauge from '../../components/shared/ScoreGauge';
@@ -8,9 +9,32 @@ import ExplainabilityPanel from '../../components/shared/ExplainabilityPanel';
 import ProgressStepper from '../../components/shared/ProgressStepper';
 
 const QualificationPage: React.FC = () => {
+  const navigate = useNavigate();
   const { opportunities } = useStore();
   const [selectedId, setSelectedId] = useState<string>(opportunities[0]?.id ?? '');
+  const [saving, setSaving] = useState('');
+  const [message, setMessage] = useState('');
   const opp = opportunities.find(o => o.id === selectedId);
+
+  useEffect(() => {
+    if (opportunities.length > 0 && !opportunities.some((o) => o.id === selectedId)) {
+      setSelectedId(opportunities[0].id);
+    }
+  }, [opportunities, selectedId]);
+
+  const runDecision = async (action: string, nextRoute?: string) => {
+    if (!opp) return;
+    setSaving(action);
+    setMessage('');
+    try {
+      await useStore.getState().runWorkflowAction(opp.id, action);
+      if (nextRoute) navigate(nextRoute);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Action failed.');
+    } finally {
+      setSaving('');
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in" id="qualification-page">
@@ -88,16 +112,17 @@ const QualificationPage: React.FC = () => {
                   )}
 
                   <div className="flex items-center gap-2 pt-3 border-t border-white/10 mt-4">
-                    <button className="flex items-center gap-1.5 bg-emerald-500/20 text-emerald-400 text-xs font-semibold px-4 py-2 rounded-lg hover:bg-emerald-500/30 transition-colors">
-                      <Check className="w-3.5 h-3.5" /> Approve
+                    <button onClick={() => runDecision('approve-qualification', '/scoring')} disabled={Boolean(saving)} className="flex items-center gap-1.5 bg-emerald-500/20 text-emerald-400 text-xs font-semibold px-4 py-2 rounded-lg hover:bg-emerald-500/30 transition-colors disabled:opacity-50">
+                      <Check className="w-3.5 h-3.5" /> {saving === 'approve-qualification' ? 'Approving...' : 'Approve'}
                     </button>
-                    <button className="flex items-center gap-1.5 bg-amber-500/20 text-amber-400 text-xs font-semibold px-4 py-2 rounded-lg hover:bg-amber-500/30 transition-colors">
-                      Request More Info
+                    <button onClick={() => runDecision('request-more-info')} disabled={Boolean(saving)} className="flex items-center gap-1.5 bg-amber-500/20 text-amber-400 text-xs font-semibold px-4 py-2 rounded-lg hover:bg-amber-500/30 transition-colors disabled:opacity-50">
+                      {saving === 'request-more-info' ? 'Saving...' : 'Request More Info'}
                     </button>
-                    <button className="flex items-center gap-1.5 bg-red-500/20 text-red-400 text-xs font-semibold px-4 py-2 rounded-lg hover:bg-red-500/30 transition-colors">
-                      <X className="w-3.5 h-3.5" /> Reject
+                    <button onClick={() => runDecision('reject-qualification')} disabled={Boolean(saving)} className="flex items-center gap-1.5 bg-red-500/20 text-red-400 text-xs font-semibold px-4 py-2 rounded-lg hover:bg-red-500/30 transition-colors disabled:opacity-50">
+                      <X className="w-3.5 h-3.5" /> {saving === 'reject-qualification' ? 'Rejecting...' : 'Reject'}
                     </button>
                   </div>
+                  {message && <p className="mt-3 text-sm text-red-400">{message}</p>}
                 </AnimatedCard>
 
                 <ExplainabilityPanel

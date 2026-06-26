@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { prisma } from '../index';
+import { prisma } from '../prismaClient';
 import { parseDocument } from '../services/documentParser';
 
 const router = Router();

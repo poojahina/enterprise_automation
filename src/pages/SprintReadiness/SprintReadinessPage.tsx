@@ -13,6 +13,22 @@ const SprintReadinessPage: React.FC = () => {
   const opp = opportunities.find(o => o.id === selectedId);
 
   const [syncing, setSyncing] = useState(false);
+  const [assessing, setAssessing] = useState(false);
+  const [message, setMessage] = useState('');
+
+  const assessReadiness = async () => {
+    if (!opp) return;
+    setAssessing(true);
+    setMessage('');
+    try {
+      await useStore.getState().runWorkflowAction(opp.id, 'assess-sprint-readiness');
+      setMessage('Sprint readiness assessment updated.');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Failed to assess sprint readiness.');
+    } finally {
+      setAssessing(false);
+    }
+  };
 
   const syncToDevOps = async () => {
     if (!opp || opp.backlogItems.length === 0) return;
@@ -56,6 +72,22 @@ const SprintReadinessPage: React.FC = () => {
       </div>
 
       {opp && <ProgressStepper currentStage={opp.currentStage} />}
+
+      {opp && (
+        <AnimatedCard className="border-emerald-500/30 bg-gradient-to-br from-emerald-500/5 to-green-500/5">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h3 className="text-sm font-semibold text-white">Readiness Actions</h3>
+              <p className="text-xs text-gray-400 mt-1">Generate backlog if needed, run governance gates, and update readiness status.</p>
+            </div>
+            <button onClick={assessReadiness} disabled={assessing} className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 text-sm">
+              <RefreshCw className={`w-4 h-4 ${assessing ? 'animate-spin' : ''}`} />
+              {assessing ? 'Assessing...' : 'Assess Readiness'}
+            </button>
+          </div>
+          {message && <p className="mt-3 text-sm text-blue-300">{message}</p>}
+        </AnimatedCard>
+      )}
 
       {opp?.sprintReadiness ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

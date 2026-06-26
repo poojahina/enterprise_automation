@@ -11,7 +11,7 @@ const STEPS = ['Basic Info', 'Process Characteristics', 'Impact & Metrics', 'Rev
 
 const IntakeWizard: React.FC = () => {
   const navigate = useNavigate();
-  const { addOpportunity } = useStore();
+  const { addOpportunity, fetchStages, setSelectedOpportunityId } = useStore();
   const [step, setStep] = useState(0);
   const [submitError, setSubmitError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -36,6 +36,14 @@ const IntakeWizard: React.FC = () => {
     setSubmitting(true);
     setSubmitError('');
 
+    try {
+      await fetchStages();
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Failed to load stage configuration.');
+      setSubmitting(false);
+      return;
+    }
+
     const chars: ProcessCharacteristics = {
       isRuleBased: form.isRuleBased, requiresReasoning: form.requiresReasoning,
       requiresMultiSystemOrchestration: form.requiresMultiSystemOrchestration,
@@ -46,6 +54,7 @@ const IntakeWizard: React.FC = () => {
     };
     const classification = classifyAutomationType(chars);
     const nextStageStatus = getNextStageStatus('Intake');
+    const nextStageRoute = getNextStageRoute('Intake');
     const newOpp: AutomationOpportunity = {
       id: `OPP-${String(Date.now()).slice(-3)}`,
       processName: form.processName, description: form.description,
@@ -79,13 +88,14 @@ const IntakeWizard: React.FC = () => {
         id: `AT-${Date.now()}`, timestamp: new Date().toISOString(),
         action: 'Idea Submitted & Auto-Classified', performedBy: 'Ashutosh',
         role: 'Business User', details: `Classified as ${classification.recommendedType} (${classification.confidenceScore}%)`,
-        stage: 'Classified',
+        stage: nextStageStatus,
       }],
     };
 
     try {
       await addOpportunity(newOpp);
-      navigate(getNextStageRoute('Intake'));
+      setSelectedOpportunityId(newOpp.id);
+      navigate(nextStageRoute);
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Failed to submit opportunity.');
     } finally {

@@ -6,6 +6,7 @@ import {
   Rocket, FileText, ChevronLeft, ChevronRight, Zap, FileSignature, Settings
 } from 'lucide-react';
 import { useStore } from '../../state/store';
+import { getEnabledPipelineStageStatuses, getStageStatusByRoute } from '../../utils/pipeline';
 
 const navItems = [
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -25,7 +26,12 @@ const navItems = [
 ];
 
 const Sidebar: React.FC = () => {
-  const { sidebarCollapsed, toggleSidebar } = useStore();
+  const { sidebarCollapsed, toggleSidebar, stages } = useStore();
+  const enabledStageStatuses = stages.length > 0 ? getEnabledPipelineStageStatuses() : [];
+  const visibleNavItems = navItems.filter((item) => {
+    const stageStatus = getStageStatusByRoute(item.path);
+    return !stageStatus || enabledStageStatuses.length === 0 || enabledStageStatuses.includes(stageStatus);
+  });
 
   return (
     <aside
@@ -49,7 +55,7 @@ const Sidebar: React.FC = () => {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const Icon = item.icon;
           return (
             <NavLink

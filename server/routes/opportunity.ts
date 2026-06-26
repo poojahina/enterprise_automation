@@ -1,79 +1,191 @@
+import { randomUUID } from 'node:crypto';
 import { Router } from 'express';
-import { prisma } from '../index';
+import { prisma } from '../prismaClient';
+import { resolveNextStage } from '../utils/pipelineResolver';
+import { normalizeOpportunityPayload, parseOpportunityData } from '../utils/opportunityMapper';
 
 const router = Router();
 
+function toRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function appendAuditTrail(
+  opportunity: Record<string, unknown>,
+  action: string,
+  details: string,
+  performedBy = 'System',
+  role = 'System'
+): Record<string, unknown> {
+  const auditTrail = Array.isArray(opportunity.auditTrail) ? opportunity.auditTrail : [];
+
+  return {
+    ...opportunity,
+    auditTrail: [
+      ...auditTrail,
+      {
+        id: randomUUID(),
+        timestamp: new Date().toISOString(),
+        action,
+        performedBy,
+        role,
+        details,
+        stage: opportunity.currentStage ?? 'Submitted',
+      },
+    ],
+  };
+}
+
 // Get all opportunities
-router.get('/', async (req, res) => {
+router.get('/', async (_req, res) => {
   try {
-    const opps = await prisma.opportunity.findMany({
-      orderBy: { updatedAt: 'desc' }
+    const opportunities = await prisma.opportunity.findMany({
+      orderBy: { updatedAt: 'desc' },
     });
-    // Parse the JSON data back into object form
-    const parsedOpps = opps.map(opp => {
-      const data = JSON.parse(opp.data);
-      return {
-        ...data,
-        id: opp.id,
-        currentStage: opp.currentStage,
-        status: opp.status
-      };
-    });
-    res.json(parsedOpps);
+
+    res.json(opportunities.map(parseOpportunityData));
   } catch (error) {
+    console.error('Failed to fetch opportunities:', error);
     res.status(500).json({ error: 'Failed to fetch opportunities' });
+  }
+});
+
+// Get one opportunity
+router.get('/:id', async (req, res) => {
+  try {
+    const opportunity = await prisma.opportunity.findUnique({
+      where: { id: req.params.id },
+    });
+
+    if (!opportunity) {
+      return res.status(404).json({ error: 'Opportunity not found' });
+    }
+
+    res.json(parseOpportunityData(opportunity));
+  } catch (error) {
+    console.error('Failed to fetch opportunity:', error);
+    res.status(500).json({ error: 'Failed to fetch opportunity' });
   }
 });
 
 // Create a new opportunity
 router.post('/', async (req, res) => {
   try {
-    const opp = req.body;
-    
-    const newOpp = await prisma.opportunity.create({
+    const payload = normalizeOpportunityPayload(toRecord(req.body));
+    const id = typeof payload.id === 'string' && payload.id.trim() ? payload.id : randomUUID();
+    const processName = typeof payload.processName === 'string' && payload.processName.trim()
+      ? payload.processName
+      : 'Untitled automation opportunity';
+    const currentStage = String(payload.currentStage);
+    const status = String(payload.status);
+    const data = appendAuditTrail(
+      { ...payload, id, processName, currentStage, status, pipelineStatus: status },
+      'Opportunity Created',
+      `Created opportunity "${processName}"`,
+      typeof payload.submittedBy === 'string' ? payload.submittedBy : 'System',
+      'Business User'
+    );
+
+    const created = await prisma.opportunity.create({
       data: {
-        id: opp.id,
-        processName: opp.processName,
-        currentStage: opp.currentStage,
-        status: opp.status || 'Active',
-        data: JSON.stringify(opp),
-      }
+        id,
+        processName,
+        currentStage,
+        status,
+        data: JSON.stringify(data),
+      },
     });
-    res.json({
-      ...opp,
-      id: newOpp.id,
-      currentStage: newOpp.currentStage,
-      status: newOpp.status,
-    });
+
+    res.status(201).json(parseOpportunityData(created));
   } catch (error) {
+    console.error('Failed to create opportunity:', error);
     res.status(500).json({ error: 'Failed to create opportunity' });
   }
 });
 
 // Update an opportunity
 router.put('/:id', async (req, res) => {
-  const { id } = req.params;
   try {
-    // Fetch current to merge data
-    const current = await prisma.opportunity.findUnique({ where: { id } });
-    if (!current) return res.status(404).json({ error: 'Not found' });
+    const current = await prisma.opportunity.findUnique({ where: { id: req.params.id } });
 
-    const currentData = JSON.parse(current.data);
-    const updatedData = { ...currentData, ...req.body };
+    if (!current) {
+      return res.status(404).json({ error: 'Opportunity not found' });
+    }
+
+    const currentData = parseOpportunityData(current);
+    const updates = toRecord(req.body);
+    const updatedData = appendAuditTrail(
+      normalizeOpportunityPayload({ ...currentData, ...updates, id: current.id }),
+      'Opportunity Updated',
+      'Updated opportunity details',
+      typeof updates.performedBy === 'string' ? updates.performedBy : 'System',
+      typeof updates.role === 'string' ? updates.role : 'System'
+    );
 
     const updated = await prisma.opportunity.update({
-      where: { id },
+      where: { id: req.params.id },
       data: {
-        processName: updatedData.processName,
-        currentStage: updatedData.currentStage,
-        status: updatedData.status || 'Active',
+        processName: String(updatedData.processName ?? current.processName),
+        currentStage: String(updatedData.currentStage ?? current.currentStage),
+        status: String(updatedData.status ?? updatedData.pipelineStatus ?? current.status),
         data: JSON.stringify(updatedData),
-      }
+      },
     });
 
-    res.json({ ...updatedData, id: updated.id, currentStage: updated.currentStage });
+    res.json(parseOpportunityData(updated));
   } catch (error) {
+    console.error('Failed to update opportunity:', error);
     res.status(500).json({ error: 'Failed to update opportunity' });
+  }
+});
+
+// Move to the next enabled workflow stage
+router.post('/:id/advance', async (req, res) => {
+  try {
+    const current = await prisma.opportunity.findUnique({ where: { id: req.params.id } });
+
+    if (!current) {
+      return res.status(404).json({ error: 'Opportunity not found' });
+    }
+
+    const nextStage = await resolveNextStage(current.currentStage);
+
+    if (!nextStage) {
+      return res.status(400).json({ error: 'No next enabled stage is available' });
+    }
+
+    const currentData = parseOpportunityData(current);
+    const updatedData = appendAuditTrail(
+      { ...currentData, currentStage: nextStage },
+      'Stage Advanced',
+      `Moved from ${current.currentStage} to ${nextStage}`,
+      typeof req.body?.performedBy === 'string' ? req.body.performedBy : 'System',
+      typeof req.body?.role === 'string' ? req.body.role : 'System'
+    );
+
+    const updated = await prisma.opportunity.update({
+      where: { id: req.params.id },
+      data: {
+        currentStage: nextStage,
+        data: JSON.stringify(updatedData),
+      },
+    });
+
+    res.json(parseOpportunityData(updated));
+  } catch (error) {
+    console.error('Failed to advance opportunity:', error);
+    res.status(500).json({ error: 'Failed to advance opportunity' });
+  }
+});
+
+// Delete an opportunity
+router.delete('/:id', async (req, res) => {
+  try {
+    await prisma.opportunity.delete({ where: { id: req.params.id } });
+    res.status(204).send();
+  } catch (error) {
+    console.error('Failed to delete opportunity:', error);
+    res.status(500).json({ error: 'Failed to delete opportunity' });
   }
 });
 
