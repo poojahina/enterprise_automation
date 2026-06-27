@@ -89,9 +89,9 @@ const Header: React.FC = () => {
         {/* User */}
         <div className="flex items-center gap-2 pl-3 border-l border-white/10">
           <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
-            A
+            HS
           </div>
-          <span className="text-xs font-medium text-gray-300">Ashutosh</span>
+          <span className="text-xs font-medium text-gray-300">Hina Saxena</span>
         </div>
       </div>
     </header>
