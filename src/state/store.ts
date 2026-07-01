@@ -108,7 +108,12 @@ export const useStore = create<AppState>()(
 
       runWorkflowAction: async (id, action, payload = {}) => {
         try {
-          const res = await fetch(`/api/workflow/opportunities/${id}/actions/${action}`, {
+          const artifactRoutes: Record<string, string> = {
+            'apply-pdd': `/api/artifacts/${id}/pdd/generate`,
+            'generate-solution': `/api/artifacts/${id}/sdd/generate`,
+            'generate-backlog': `/api/artifacts/${id}/user-stories/generate`,
+          };
+          const res = await fetch(artifactRoutes[action] ?? `/api/workflow/opportunities/${id}/actions/${action}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),

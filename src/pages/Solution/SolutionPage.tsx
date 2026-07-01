@@ -56,8 +56,8 @@ const SolutionPage: React.FC = () => {
           <Lightbulb className="w-4 h-4 text-white" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-white">Solution Recommendation</h1>
-          <p className="text-sm text-gray-400">Architecture, technology stack, and implementation design</p>
+          <h1 className="text-xl font-bold text-white">Solution Design Document (SDD)</h1>
+          <p className="text-sm text-gray-400">Create the architecture, integrations, security, monitoring, and implementation design</p>
         </div>
       </div>
 
@@ -76,14 +76,14 @@ const SolutionPage: React.FC = () => {
             <div>
               <div className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-amber-400" />
-                <h3 className="text-sm font-semibold text-white">Solution Generator</h3>
+                <h3 className="text-sm font-semibold text-white">SDD Generator</h3>
               </div>
               <p className="text-xs text-gray-400 mt-1">Generate architecture, components, integrations, security, and monitoring recommendations.</p>
             </div>
             <div className="flex flex-wrap items-center justify-end gap-2">
               <button onClick={() => generateSolution(false)} disabled={generating} className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 text-sm">
                 <Sparkles className="w-4 h-4" />
-                {generating ? 'Generating...' : opp.solution ? 'Regenerate Enterprise Solution' : 'Generate Enterprise Solution'}
+                {generating ? 'Generating SDD...' : opp.solution ? 'Regenerate SDD' : 'Generate SDD'}
               </button>
               <button
                 onClick={() => opp.solution ? navigate(getNextStageRoute('Solution Designed')) : generateSolution(true)}
@@ -164,7 +164,7 @@ const SolutionPage: React.FC = () => {
       ) : (
         <AnimatedCard>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <p className="text-sm text-gray-400">Solution design not yet completed. Generate the enterprise solution recommendation to move into ROI.</p>
+            <p className="text-sm text-gray-400">SDD not yet completed. Generate the technical solution design to move into ROI.</p>
             {opp && (
               <button
                 onClick={() => generateSolution(true)}

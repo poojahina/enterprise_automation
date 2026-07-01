@@ -120,6 +120,12 @@ export function runWorkflowAction(opportunity: OpportunityRecord, action: string
       appendAudit(updated, 'PRD Created', 'Product requirements document was generated.');
       return updated;
 
+    case 'apply-pdd':
+      updated.pdd = input.pdd ?? generatePdd(updated);
+      updated.currentStage = 'PRD Creation';
+      appendAudit(updated, 'PDD Created', 'Process definition document was generated from discovery context.');
+      return updated;
+
     case 'generate-solution':
       updated.solution = input.solution ?? generateSolution(updated);
       updated.currentStage = 'Solution Designed';
@@ -223,6 +229,24 @@ function buildDocumentSections(opportunity: OpportunityRecord, docType: string) 
         `Exceptions: ${discovery.exceptions.join('; ')}`,
         `Systems: ${discovery.systems.join(', ')}`,
       ] },
+    ];
+  }
+
+  if (docType === 'pdd') {
+    const pdd = opportunity.pdd ?? generatePdd(opportunity);
+    return [
+      header,
+      { title: '1. Process Overview', lines: pdd.processOverview },
+      { title: '2. Current-State Process (As-Is)', lines: pdd.currentStateSteps.map((item: string, index: number) => `Step ${index + 1}: ${item}`) },
+      { title: '3. Systems and Applications', lines: pdd.systems },
+      { title: '4. Inputs and Outputs', lines: pdd.inputsAndOutputs },
+      { title: '5. Business Rules', lines: pdd.businessRules.map((item: string, index: number) => `BR-${index + 1}: ${item}`) },
+      { title: '6. Exceptions', lines: pdd.exceptions },
+      { title: '7. Human Decisions and Approvals', lines: pdd.humanApprovals },
+      { title: '8. Pain Points and Baseline', lines: pdd.painPointsAndBaseline },
+      { title: '9. Target Process (To-Be)', lines: pdd.targetProcess },
+      { title: '10. Controls, SLA, and Compliance', lines: pdd.controls },
+      { title: '11. Assumptions and Open Items', lines: pdd.openItems },
     ];
   }
 
@@ -540,6 +564,52 @@ function generatePrd(opp: OpportunityRecord, aiOutput?: string) {
   };
 }
 
+function generatePdd(opp: OpportunityRecord) {
+  const discovery = opp.discovery ?? generateDiscovery(opp);
+  const applications = discovery.systems?.length ? discovery.systems : opp.technical?.applications ?? [];
+  return {
+    processOverview: [
+      `Process: ${opp.processName}`,
+      `Purpose: ${opp.description ?? 'To be confirmed'}`,
+      `Process owner: ${opp.processOwner ?? 'To be confirmed'}`,
+      `Business unit: ${opp.businessUnit ?? 'To be confirmed'}`,
+      `Monthly volume: ${opp.metrics?.volumePerMonth ?? 0} transactions`,
+    ],
+    currentStateSteps: discovery.asIsSteps?.length ? discovery.asIsSteps : ['Complete Discovery to capture current-state steps.'],
+    systems: applications.length ? applications : ['Systems to be confirmed.'],
+    inputsAndOutputs: [
+      `Data sources: ${(opp.technical?.dataSources ?? []).join(', ') || 'To be confirmed'}`,
+      `Data type: ${opp.technical?.dataType ?? opp.processCharacteristics?.dataType ?? 'To be confirmed'}`,
+      `Data volume: ${discovery.dataVolume ?? 'To be confirmed'}`,
+      `Peak periods: ${discovery.peakPeriods ?? 'To be confirmed'}`,
+    ],
+    businessRules: discovery.businessRules?.length ? discovery.businessRules : ['Business rules to be confirmed.'],
+    exceptions: discovery.exceptions?.length ? discovery.exceptions : ['Exception scenarios to be confirmed.'],
+    humanApprovals: discovery.humanApprovals?.length ? discovery.humanApprovals : ['Human approvals to be confirmed.'],
+    painPointsAndBaseline: [
+      `Pain points: ${opp.impact?.painPoints ?? 'To be confirmed'}`,
+      `Manual effort: ${opp.metrics?.manualEffortHours ?? 0} hours/month`,
+      `Error rate: ${opp.metrics?.errorRatePercent ?? 0}%`,
+      `Average handling time: ${opp.metrics?.avgProcessingTimeMinutes ?? 0} minutes`,
+    ],
+    targetProcess: [
+      'Validate incoming data before processing.',
+      'Automate standard transactions using the recommended technology.',
+      'Route exceptions and approvals to the designated human owner.',
+      'Record an auditable result for every transaction.',
+    ],
+    controls: [
+      `SLA: ${discovery.sla ?? 'To be agreed'}`,
+      `Compliance requirements: ${discovery.complianceRequirements ?? 'To be confirmed'}`,
+      'Apply role-based access, audit logging, exception evidence, and operational monitoring.',
+    ],
+    openItems: [
+      'Validate volumes and exception rates.',
+      'Confirm system access, credentials, retention, and business rule ownership.',
+    ],
+  };
+}
+
 function generateSolution(opp: OpportunityRecord) {
   const type = opp.score?.recommendedAutomationType ?? opp.classification?.recommendedType ?? 'RPA';
   const discovery = opp.discovery ?? generateDiscovery(opp);
@@ -657,10 +727,15 @@ function recommendPod(opp: OpportunityRecord) {
 
 function generateBacklog(opp: OpportunityRecord) {
   const prefix = String(opp.id ?? 'AUTO').replace(/[^A-Z0-9]/gi, '').slice(-4).toUpperCase();
+  const acceptanceCriteria = [
+    'Given valid inputs, when the story flow runs, then the expected result is saved with an audit record.',
+    'Given invalid or exceptional data, when processing cannot continue, then the case is routed with a clear reason and owner.',
+    'Given an authorized user, when they review the result, then all relevant status, timestamps, and evidence are visible.',
+  ];
   return [
-    { jiraKey: `${prefix}-001`, title: `Create ${opp.processName} automation epic`, description: 'Define delivery scope and acceptance criteria.', type: 'Epic', priority: opp.priority?.businessPriority ?? 'Medium', status: 'To Do', storyPoints: 8, assignee: 'Product Owner', sprint: 'Sprint 1' },
-    { jiraKey: `${prefix}-002`, title: 'Build integration and validation workflow', description: 'Implement core automation logic and integrations.', type: 'Story', priority: 'High', status: 'To Do', storyPoints: 13, assignee: 'Automation Engineer', sprint: 'Sprint 1' },
-    { jiraKey: `${prefix}-003`, title: 'Configure exception handling and audit trail', description: 'Expose exceptions and audit records for operations.', type: 'Story', priority: 'Medium', status: 'To Do', storyPoints: 8, assignee: 'Solution Architect', sprint: 'Sprint 2' },
+    { jiraKey: `${prefix}-001`, title: `Create ${opp.processName} automation epic`, description: 'Define delivery scope and acceptance criteria.', acceptanceCriteria, type: 'Epic', priority: opp.priority?.businessPriority ?? 'Medium', status: 'To Do', storyPoints: 8, assignee: 'Product Owner', sprint: 'Sprint 1' },
+    { jiraKey: `${prefix}-002`, title: 'Build integration and validation workflow', description: 'Implement core automation logic and integrations.', acceptanceCriteria, type: 'Story', priority: 'High', status: 'To Do', storyPoints: 13, assignee: 'Automation Engineer', sprint: 'Sprint 1' },
+    { jiraKey: `${prefix}-003`, title: 'Configure exception handling and audit trail', description: 'Expose exceptions and audit records for operations.', acceptanceCriteria, type: 'Story', priority: 'Medium', status: 'To Do', storyPoints: 8, assignee: 'Solution Architect', sprint: 'Sprint 2' },
   ];
 }
 
@@ -713,6 +788,8 @@ function nextMonday() {
 function titleForDoc(docType: string) {
   return docType === 'prd'
     ? 'Product Requirements Document'
+    : docType === 'pdd'
+      ? 'Process Definition Document'
     : docType === 'business-case'
       ? 'Business Case'
       : docType === 'solution-design'

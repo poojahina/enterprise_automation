@@ -64,6 +64,12 @@ public sealed class WorkflowEngine
                 OpportunityJson.AppendAudit(updated, "PRD Created", "Product requirements document was generated.");
                 return updated;
 
+            case "apply-pdd":
+                updated["pdd"] = input["pdd"]?.DeepClone() ?? BuildPdd(updated);
+                updated["currentStage"] = "PRD Creation";
+                OpportunityJson.AppendAudit(updated, "PDD Created", "Process definition document was generated from discovery context.");
+                return updated;
+
             case "generate-solution":
                 updated["solution"] = input["solution"]?.DeepClone() ?? BuildSolution(updated);
                 updated["currentStage"] = "Solution Designed";
@@ -109,6 +115,7 @@ public sealed class WorkflowEngine
         var title = docType switch
         {
             "prd" => "Product Requirements Document",
+            "pdd" => "Process Definition Document",
             "business-case" => "Business Case",
             "solution-design" => "Solution Design",
             "sprint-backlog" => "Sprint Backlog",
@@ -117,6 +124,7 @@ public sealed class WorkflowEngine
         var sections = docType switch
         {
             "prd" => BuildDocumentSections(title, opportunity, BuildPrd(opportunity)),
+            "pdd" => BuildDocumentSections(title, opportunity, opportunity["pdd"] as JsonObject ?? BuildPdd(opportunity)),
             "business-case" => BuildDocumentSections(title, opportunity, BuildRoi(opportunity, [])),
             "solution-design" => BuildDocumentSections(title, opportunity, BuildSolution(opportunity)),
             "sprint-backlog" => BuildDocumentSections(title, opportunity, new JsonObject { ["backlogItems"] = BuildBacklog(opportunity) }),
@@ -233,6 +241,56 @@ public sealed class WorkflowEngine
         };
     }
 
+    private static JsonObject BuildPdd(JsonObject opp)
+    {
+        var discovery = opp["discovery"] as JsonObject ?? BuildDiscovery(opp);
+        var technical = opp["technical"] as JsonObject ?? [];
+        var metrics = opp["metrics"] as JsonObject ?? [];
+        var impact = opp["impact"] as JsonObject ?? [];
+        return new JsonObject
+        {
+            ["processOverview"] = new JsonArray(
+                $"Process: {OpportunityJson.StringValue(opp, "processName", "To be confirmed")}",
+                $"Purpose: {OpportunityJson.StringValue(opp, "description", "To be confirmed")}",
+                $"Process owner: {OpportunityJson.StringValue(opp, "processOwner", "To be confirmed")}",
+                $"Business unit: {OpportunityJson.StringValue(opp, "businessUnit", "To be confirmed")}",
+                $"Monthly volume: {OpportunityJson.NumberValue(metrics, "volumePerMonth")} transactions"
+            ),
+            ["currentStateSteps"] = discovery["asIsSteps"]?.DeepClone() ?? new JsonArray("Complete Discovery to capture current-state steps."),
+            ["systems"] = discovery["systems"]?.DeepClone() ?? technical["applications"]?.DeepClone() ?? new JsonArray("Systems to be confirmed."),
+            ["inputsAndOutputs"] = new JsonArray(
+                $"Data sources: {JsonSerializer.Serialize(technical["dataSources"], OpportunityJson.JsonOptions)}",
+                $"Data type: {OpportunityJson.StringValue(technical, "dataType", "To be confirmed")}",
+                $"Data volume: {OpportunityJson.StringValue(discovery, "dataVolume", "To be confirmed")}",
+                $"Peak periods: {OpportunityJson.StringValue(discovery, "peakPeriods", "To be confirmed")}"
+            ),
+            ["businessRules"] = discovery["businessRules"]?.DeepClone() ?? new JsonArray("Business rules to be confirmed."),
+            ["exceptions"] = discovery["exceptions"]?.DeepClone() ?? new JsonArray("Exception scenarios to be confirmed."),
+            ["humanApprovals"] = discovery["humanApprovals"]?.DeepClone() ?? new JsonArray("Human approvals to be confirmed."),
+            ["painPointsAndBaseline"] = new JsonArray(
+                $"Pain points: {OpportunityJson.StringValue(impact, "painPoints", "To be confirmed")}",
+                $"Manual effort: {OpportunityJson.NumberValue(metrics, "manualEffortHours")} hours/month",
+                $"Error rate: {OpportunityJson.NumberValue(metrics, "errorRatePercent")}%",
+                $"Average handling time: {OpportunityJson.NumberValue(metrics, "avgProcessingTimeMinutes")} minutes"
+            ),
+            ["targetProcess"] = new JsonArray(
+                "Validate incoming data before processing.",
+                "Automate standard transactions using the recommended technology.",
+                "Route exceptions and approvals to the designated human owner.",
+                "Record an auditable result for every transaction."
+            ),
+            ["controls"] = new JsonArray(
+                $"SLA: {OpportunityJson.StringValue(discovery, "sla", "To be agreed")}",
+                $"Compliance requirements: {OpportunityJson.StringValue(discovery, "complianceRequirements", "To be confirmed")}",
+                "Apply role-based access, audit logging, exception evidence, and operational monitoring."
+            ),
+            ["openItems"] = new JsonArray(
+                "Validate volumes and exception rates.",
+                "Confirm system access, credentials, retention, and business rule ownership."
+            )
+        };
+    }
+
     private static JsonObject BuildSolution(JsonObject opp)
     {
         var process = OpportunityJson.StringValue(opp, "processName", "automation process");
@@ -307,6 +365,11 @@ public sealed class WorkflowEngine
         ["jiraKey"] = $"{prefix}-{number}",
         ["title"] = title,
         ["description"] = description,
+        ["acceptanceCriteria"] = new JsonArray(
+            "Given valid inputs, when the story flow runs, then the expected result is saved with an audit record.",
+            "Given invalid or exceptional data, when processing cannot continue, then the case is routed with a clear reason and owner.",
+            "Given an authorized user, when they review the result, then all relevant status, timestamps, and evidence are visible."
+        ),
         ["type"] = type,
         ["priority"] = priority,
         ["status"] = "To Do",

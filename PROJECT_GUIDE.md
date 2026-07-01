@@ -116,8 +116,8 @@ The default workflow contains these stages:
 | 3 | Qualified | `/qualification` |
 | 4 | Scored | `/scoring` |
 | 5 | Discovery | `/discovery` |
-| 6 | PRD Creation | `/prd` |
-| 7 | Solution Designed | `/solution` |
+| 6 | PDD Creation (`PRD Creation` compatibility status) | `/pdd` |
+| 7 | SDD Creation (`Solution Designed` persisted status) | `/sdd` |
 | 8 | ROI Approved | `/roi` |
 | 9 | Prioritized | `/prioritization` |
 | 10 | Pod Allocated | `/pods` |
@@ -496,6 +496,7 @@ Supported actions:
 | `generate-score` | Generate scoring and complexity information |
 | `apply-discovery` | Save or generate discovery output |
 | `apply-prd` | Save or generate the PRD |
+| `apply-pdd` | Generate and persist the Process Definition Document |
 | `generate-solution` | Generate a solution recommendation |
 | `approve-roi` | Generate/approve the business case |
 | `prioritize` | Mark the opportunity prioritized |
@@ -505,10 +506,22 @@ Supported actions:
 
 The frontend should call `runWorkflowAction(...)` in `src/state/store.ts` rather than implementing independent page-level persistence.
 
+The delivery-artifact flow is:
+
+1. `/pdd` creates the as-is process, systems, inputs and outputs, rules, exceptions, approvals, baseline, to-be process, controls, and open items.
+2. `/sdd` creates the Solution Design Document using the persisted solution artifact.
+3. `/user-stories` generates backlog items, presents them as user stories with acceptance criteria, and supports export.
+
 ### Documents and context
 
 | Method | Endpoint | Purpose |
 |---|---|---|
+| POST | `/api/artifacts/{opportunityId}/pdd/generate` | Generate and persist the PDD |
+| GET | `/api/artifacts/{opportunityId}/pdd` | Read the persisted PDD |
+| POST | `/api/artifacts/{opportunityId}/sdd/generate` | Generate and persist the SDD |
+| GET | `/api/artifacts/{opportunityId}/sdd` | Read the persisted SDD |
+| POST | `/api/artifacts/{opportunityId}/user-stories/generate` | Generate and persist user stories and acceptance criteria |
+| GET | `/api/artifacts/{opportunityId}/user-stories` | Read persisted user stories |
 | GET | `/api/documents/{opportunityId}/{docType}/export` | Export generated text content |
 | POST | `/api/context/upload` | Upload opportunity context using multipart form data |
 | GET | `/api/context/{opportunityId}` | List uploaded context metadata |

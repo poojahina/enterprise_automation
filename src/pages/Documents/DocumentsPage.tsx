@@ -4,7 +4,7 @@ import { FileText, Download, Printer, Share2 } from 'lucide-react';
 import AnimatedCard from '../../components/shared/AnimatedCard';
 import type { AutomationOpportunity, BacklogItem } from '../../models/types';
 
-type DocType = 'prd' | 'business-case' | 'solution-design' | 'sprint-backlog';
+type DocType = 'prd' | 'pdd' | 'business-case' | 'solution-design' | 'sprint-backlog';
 type DocumentSection = { title: string; lines: string[] };
 
 const DocumentsPage: React.FC = () => {
@@ -56,6 +56,7 @@ const DocumentsPage: React.FC = () => {
 
   const docs: { type: DocType; title: string; available: boolean }[] = [
     { type: 'prd', title: 'Product Requirements Document', available: !!opp },
+    { type: 'pdd', title: 'Process Definition Document', available: !!opp },
     { type: 'business-case', title: 'Business Case Document', available: !!opp },
     { type: 'solution-design', title: 'Solution Design Document', available: !!opp },
     { type: 'sprint-backlog', title: 'Sprint Backlog Export', available: !!opp },
@@ -171,6 +172,24 @@ function buildDocumentSections(opp: AutomationOpportunity, docType: DocType): Do
       { title: '6. Out of Scope', lines: prd.outOfScope },
       { title: '7. Dependencies', lines: prd.dependencies },
     ];
+  }
+
+  if (docType === 'pdd') {
+    const pdd = opp.pdd;
+    return pdd ? [
+      header,
+      { title: '1. Process Overview', lines: pdd.processOverview },
+      { title: '2. Current-State Process (As-Is)', lines: pdd.currentStateSteps },
+      { title: '3. Systems and Applications', lines: pdd.systems },
+      { title: '4. Inputs and Outputs', lines: pdd.inputsAndOutputs },
+      { title: '5. Business Rules', lines: pdd.businessRules },
+      { title: '6. Exceptions', lines: pdd.exceptions },
+      { title: '7. Human Decisions and Approvals', lines: pdd.humanApprovals },
+      { title: '8. Pain Points and Baseline', lines: pdd.painPointsAndBaseline },
+      { title: '9. Target Process (To-Be)', lines: pdd.targetProcess },
+      { title: '10. Controls, SLA, and Compliance', lines: pdd.controls },
+      { title: '11. Assumptions and Open Items', lines: pdd.openItems },
+    ] : [header, { title: 'PDD Not Generated', lines: ['Open PDD Creation and generate the process definition first.'] }];
   }
 
   if (docType === 'business-case') {

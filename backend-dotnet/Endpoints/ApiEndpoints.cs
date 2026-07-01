@@ -161,6 +161,23 @@ public static class ApiEndpoints
             return Results.File(Encoding.UTF8.GetBytes(text), "text/plain; charset=utf-8", $"{opportunityId}-{docType}.txt");
         });
 
+        api.MapPost("/artifacts/{opportunityId}/pdd/generate",
+            (string opportunityId, AppDbContext db, WorkflowEngine workflow) =>
+                GenerateArtifactAsync(opportunityId, "apply-pdd", db, workflow));
+        api.MapPost("/artifacts/{opportunityId}/sdd/generate",
+            (string opportunityId, AppDbContext db, WorkflowEngine workflow) =>
+                GenerateArtifactAsync(opportunityId, "generate-solution", db, workflow));
+        api.MapPost("/artifacts/{opportunityId}/user-stories/generate",
+            (string opportunityId, AppDbContext db, WorkflowEngine workflow) =>
+                GenerateArtifactAsync(opportunityId, "generate-backlog", db, workflow));
+
+        api.MapGet("/artifacts/{opportunityId}/pdd",
+            (string opportunityId, AppDbContext db) => GetArtifactAsync(opportunityId, "pdd", db));
+        api.MapGet("/artifacts/{opportunityId}/sdd",
+            (string opportunityId, AppDbContext db) => GetArtifactAsync(opportunityId, "solution", db));
+        api.MapGet("/artifacts/{opportunityId}/user-stories",
+            (string opportunityId, AppDbContext db) => GetArtifactAsync(opportunityId, "backlogItems", db));
+
         api.MapPost("/context/upload", async (HttpRequest request, AppDbContext db) =>
         {
             var form = await request.ReadFormAsync();
@@ -225,6 +242,38 @@ public static class ApiEndpoints
         }
 
         await db.SaveChangesAsync();
+    }
+
+    private static async Task<IResult> GenerateArtifactAsync(string opportunityId, string action, AppDbContext db, WorkflowEngine workflow)
+    {
+        var entity = await db.Opportunities.FindAsync(opportunityId);
+        if (entity is null) return Results.NotFound(new { error = "Opportunity not found" });
+
+        try
+        {
+            var updated = workflow.Run(OpportunityJson.Parse(entity), action, []);
+            entity.ProcessName = OpportunityJson.StringValue(updated, "processName", entity.ProcessName);
+            entity.CurrentStage = OpportunityJson.StringValue(updated, "currentStage", entity.CurrentStage);
+            entity.Status = OpportunityJson.StringValue(updated, "status", entity.Status);
+            entity.Data = updated.ToJsonString(OpportunityJson.JsonOptions);
+            entity.UpdatedAt = DateTime.UtcNow;
+            await db.SaveChangesAsync();
+            return Results.Json(OpportunityJson.Parse(entity), OpportunityJson.JsonOptions);
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem(ex.Message, statusCode: StatusCodes.Status500InternalServerError);
+        }
+    }
+
+    private static async Task<IResult> GetArtifactAsync(string opportunityId, string artifactName, AppDbContext db)
+    {
+        var entity = await db.Opportunities.FindAsync(opportunityId);
+        if (entity is null) return Results.NotFound(new { error = "Opportunity not found" });
+        var artifact = OpportunityJson.Parse(entity)[artifactName];
+        return artifact is null
+            ? Results.NotFound(new { error = $"{artifactName} has not been generated" })
+            : Results.Json(artifact, OpportunityJson.JsonOptions);
     }
 
     private static object ToStageDto(StageConfigEntity stage) => new

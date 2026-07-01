@@ -142,6 +142,20 @@ export interface ProductRequirementsDocument {
   dependencies: string[];
 }
 
+export interface ProcessDefinitionDocument {
+  processOverview: string[];
+  currentStateSteps: string[];
+  systems: string[];
+  inputsAndOutputs: string[];
+  businessRules: string[];
+  exceptions: string[];
+  humanApprovals: string[];
+  painPointsAndBaseline: string[];
+  targetProcess: string[];
+  controls: string[];
+  openItems: string[];
+}
+
 // ─── Solution Recommendation ─────────────────────────────────
 export interface SolutionRecommendation {
   toBeSummary: string;
@@ -175,6 +189,7 @@ export interface BacklogItem {
   jiraKey: string;
   title: string;
   description: string;
+  acceptanceCriteria?: string[];
   type: 'Epic' | 'Story' | 'Task' | 'Sub-task';
   priority: 'Critical' | 'High' | 'Medium' | 'Low';
   status: 'To Do' | 'In Progress' | 'In Review' | 'Done';
@@ -255,6 +270,7 @@ export interface AutomationOpportunity {
   score: OpportunityScore | null;
   discovery: DiscoveryAssessment | null;
   prd: ProductRequirementsDocument | null;
+  pdd?: ProcessDefinitionDocument | null;
   solution: SolutionRecommendation | null;
   businessCase: BusinessCase | null;
   backlogItems: BacklogItem[];

@@ -8,8 +8,9 @@ import ClassificationPage from './pages/Classification/ClassificationPage';
 import QualificationPage from './pages/Qualification/QualificationPage';
 import ScoringPage from './pages/Scoring/ScoringPage';
 import DiscoveryWorkspace from './pages/Discovery/DiscoveryWorkspace';
-import PRDCreationPage from './pages/PRD/PRDCreationPage';
+import PDDCreationPage from './pages/PDD/PDDCreationPage';
 import SolutionPage from './pages/Solution/SolutionPage';
+import UserStoriesPage from './pages/UserStories/UserStoriesPage';
 import ROICalculator from './pages/ROI/ROICalculator';
 import PrioritizationBoard from './pages/Prioritization/PrioritizationBoard';
 import PodAllocationPage from './pages/PodAllocation/PodAllocationPage';
@@ -36,8 +37,11 @@ const App: React.FC = () => {
         <Route path="/qualification" element={<QualificationPage />} />
         <Route path="/scoring" element={<ScoringPage />} />
         <Route path="/discovery" element={<DiscoveryWorkspace />} />
-        <Route path="/prd" element={<PRDCreationPage />} />
-        <Route path="/solution" element={<SolutionPage />} />
+        <Route path="/pdd" element={<PDDCreationPage />} />
+        <Route path="/prd" element={<Navigate to="/pdd" replace />} />
+        <Route path="/sdd" element={<SolutionPage />} />
+        <Route path="/solution" element={<Navigate to="/sdd" replace />} />
+        <Route path="/user-stories" element={<UserStoriesPage />} />
         <Route path="/roi" element={<ROICalculator />} />
         <Route path="/prioritization" element={<PrioritizationBoard />} />
         <Route path="/pods" element={<PodAllocationPage />} />

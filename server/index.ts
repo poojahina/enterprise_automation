@@ -9,6 +9,7 @@ import opportunityRoutes from './routes/opportunity';
 import contextRoutes from './routes/context';
 import workflowRoutes from './routes/workflow';
 import documentRoutes from './routes/documents';
+import artifactRoutes from './routes/artifacts';
 import { prisma } from './prismaClient';
 
 dotenv.config();
@@ -27,6 +28,7 @@ app.use('/api/opportunities', opportunityRoutes);
 app.use('/api/context', contextRoutes);
 app.use('/api/workflow', workflowRoutes);
 app.use('/api/documents', documentRoutes);
+app.use('/api/artifacts', artifactRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
