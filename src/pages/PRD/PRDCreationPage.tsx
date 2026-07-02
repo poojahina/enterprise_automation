@@ -11,7 +11,7 @@ const PRDCreationPage: React.FC = () => {
   const { opportunities, selectedOpportunityId, setSelectedOpportunityId } = useStore();
   const [selectedId, setSelectedId] = useState<string>(
     selectedOpportunityId ??
-    opportunities.find(o => o.currentStage === 'PRD Creation' || o.currentStage === 'Discovery')?.id ??
+    opportunities.find(o => o.currentStage === 'PDD Creation' || o.currentStage === 'Discovery')?.id ??
     opportunities.find(o => o.prd)?.id ??
     opportunities[0]?.id ??
     ''
@@ -61,7 +61,7 @@ const PRDCreationPage: React.FC = () => {
       await useStore.getState().runWorkflowAction(opp.id, 'apply-prd', { aiOutput });
       setAiOutput(null);
       if (goNext) {
-        navigate(getNextStageRoute('PRD Creation'));
+        navigate(getNextStageRoute('PDD Creation'));
       } else {
         setMessage('PRD applied.');
       }
@@ -128,7 +128,7 @@ const PRDCreationPage: React.FC = () => {
                 </button>
               )}
               <button
-                onClick={() => opp.prd ? navigate(getNextStageRoute('PRD Creation')) : applyPRD(true)}
+                onClick={() => opp.prd ? navigate(getNextStageRoute('PDD Creation')) : applyPRD(true)}
                 disabled={applying}
                 className="flex items-center gap-1.5 bg-emerald-500/20 text-emerald-400 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-emerald-500/30 transition-colors disabled:opacity-50"
               >
@@ -137,7 +137,7 @@ const PRDCreationPage: React.FC = () => {
               </button>
               {opp.prd && (
                 <button
-                  onClick={() => navigate(getNextStageRoute('PRD Creation'))}
+                  onClick={() => navigate(getNextStageRoute('PDD Creation'))}
                   disabled={applying}
                   className="flex items-center gap-1.5 bg-blue-500/20 text-blue-400 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-500/30 transition-colors disabled:opacity-50"
                 >

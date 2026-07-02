@@ -60,20 +60,20 @@ public sealed class WorkflowEngine
 
             case "apply-prd":
                 updated["prd"] = input["prd"]?.DeepClone() ?? BuildPrd(updated, OpportunityJson.StringValue(input, "aiOutput"));
-                updated["currentStage"] = "PRD Creation";
+                updated["currentStage"] = "PDD Creation";
                 OpportunityJson.AppendAudit(updated, "PRD Created", "Product requirements document was generated.");
                 return updated;
 
             case "apply-pdd":
                 updated["pdd"] = input["pdd"]?.DeepClone() ?? BuildPdd(updated);
-                updated["currentStage"] = "PRD Creation";
+                updated["currentStage"] = "PDD Creation";
                 OpportunityJson.AppendAudit(updated, "PDD Created", "Process definition document was generated from discovery context.");
                 return updated;
 
             case "generate-solution":
                 updated["solution"] = input["solution"]?.DeepClone() ?? BuildSolution(updated);
-                updated["currentStage"] = "Solution Designed";
-                OpportunityJson.AppendAudit(updated, "Solution Designed", "Solution architecture recommendation was generated.");
+                updated["currentStage"] = "SDD Creation";
+                OpportunityJson.AppendAudit(updated, "SDD Created", "Solution design document was generated.");
                 return updated;
 
             case "approve-roi":
@@ -383,8 +383,8 @@ public sealed class WorkflowEngine
         var gates = new JsonArray(
             Gate("Classification Complete", opp["classification"] is not null, "Automation type has been classified"),
             Gate("Opportunity Scored", opp["score"] is not null, "Priority scoring has been completed"),
-            Gate("PRD Complete", opp["prd"] is not null, "Product requirements are documented"),
-            Gate("Solution Designed", opp["solution"] is not null, "Solution architecture is defined"),
+            Gate("PDD Complete", opp["pdd"] is not null, "Process definition document is complete"),
+            Gate("SDD Complete", opp["solution"] is not null, "Solution design document is complete"),
             Gate("ROI Approved", opp["businessCase"] is not null, "Business case is approved"),
             Gate("Backlog Items Created", OpportunityJson.ArrayPath(opp, "backlogItems").Count > 0, "Backlog items are ready")
         );

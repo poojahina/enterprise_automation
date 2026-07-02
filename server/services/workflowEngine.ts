@@ -116,20 +116,20 @@ export function runWorkflowAction(opportunity: OpportunityRecord, action: string
 
     case 'apply-prd':
       updated.prd = input.prd ?? generatePrd(updated, input.aiOutput);
-      updated.currentStage = 'PRD Creation';
+      updated.currentStage = 'PDD Creation';
       appendAudit(updated, 'PRD Created', 'Product requirements document was generated.');
       return updated;
 
     case 'apply-pdd':
       updated.pdd = input.pdd ?? generatePdd(updated);
-      updated.currentStage = 'PRD Creation';
+      updated.currentStage = 'PDD Creation';
       appendAudit(updated, 'PDD Created', 'Process definition document was generated from discovery context.');
       return updated;
 
     case 'generate-solution':
       updated.solution = input.solution ?? generateSolution(updated);
-      updated.currentStage = 'Solution Designed';
-      appendAudit(updated, 'Solution Designed', 'Solution architecture recommendation was generated.');
+      updated.currentStage = 'SDD Creation';
+      appendAudit(updated, 'SDD Created', 'Solution design document was generated.');
       return updated;
 
     case 'approve-roi':
@@ -745,7 +745,8 @@ function determineSprintReadiness(opp: OpportunityRecord) {
     { name: 'L1 Qualification Passed', passed: opp.qualification?.status === 'Qualified', description: 'Opportunity passed L1 qualification checks' },
     { name: 'Opportunity Scored', passed: !!opp.score?.totalScore, description: 'Priority scoring has been completed' },
     { name: 'L2 Discovery Complete', passed: !!opp.discovery?.asIsSteps?.length, description: 'Process discovery completed' },
-    { name: 'Solution Designed', passed: !!opp.solution, description: 'Solution architecture is defined' },
+    { name: 'PDD Complete', passed: !!opp.pdd, description: 'Process definition document is complete' },
+    { name: 'SDD Complete', passed: !!opp.solution, description: 'Solution design document is complete' },
     { name: 'ROI Approved', passed: !!opp.businessCase?.roiPercentage, description: 'Business case and ROI are approved' },
     { name: 'Pod Allocated', passed: !!opp.podAllocation, description: 'Delivery pod is assigned' },
     { name: 'Compliance Cleared', passed: Array.isArray(opp.complianceChecks) && opp.complianceChecks.every((check: any) => check.status === 'Passed' || check.status === 'Not Applicable'), description: 'Compliance checks passed' },

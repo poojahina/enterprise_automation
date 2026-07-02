@@ -152,7 +152,7 @@ const DiscoveryWorkspace: React.FC = () => {
                 className="flex items-center gap-1.5 bg-emerald-500/20 text-emerald-400 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-emerald-500/30 transition-colors disabled:opacity-50"
               >
                 <Check className="w-3.5 h-3.5" />
-                {applying ? 'Completing...' : opp.discovery ? 'Continue to PRD' : 'Complete Discovery'}
+                {applying ? 'Completing...' : opp.discovery ? 'Continue to PDD' : 'Complete Discovery'}
               </button>
               {opp.discovery && (
                 <button

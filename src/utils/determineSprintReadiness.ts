@@ -27,7 +27,12 @@ export function determineSprintReadiness(opp: AutomationOpportunity): SprintRead
       description: 'Process discovery and as-is documentation completed',
     },
     {
-      name: 'Solution Designed',
+      name: 'PDD Complete',
+      passed: opp.pdd != null,
+      description: 'Process definition document is complete',
+    },
+    {
+      name: 'SDD Complete',
       passed: opp.solution !== null,
       description: 'Solution architecture and technology recommendations defined',
     },

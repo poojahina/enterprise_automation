@@ -57,13 +57,16 @@ VALUES
   ('stage-3', 'Qualified', 3, true, '["System","Automation COE Analyst"]'::jsonb),
   ('stage-4', 'Scored', 4, true, '["System"]'::jsonb),
   ('stage-5', 'Discovery', 5, true, '["Business User","Solution Architect"]'::jsonb),
-  ('stage-6', 'PRD Creation', 6, true, '["Product Owner","Solution Architect"]'::jsonb),
-  ('stage-7', 'Solution Designed', 7, true, '["Solution Architect"]'::jsonb),
+  ('stage-6', 'PDD Creation', 6, true, '["Product Owner","Solution Architect"]'::jsonb),
+  ('stage-7', 'SDD Creation', 7, true, '["Solution Architect"]'::jsonb),
   ('stage-8', 'ROI Approved', 8, true, '["Product Owner","Finance"]'::jsonb),
   ('stage-9', 'Prioritized', 9, true, '["Automation COE Analyst","Product Owner"]'::jsonb),
   ('stage-10', 'Pod Allocated', 10, true, '["Product Owner"]'::jsonb),
   ('stage-11', 'Sprint Ready', 11, true, '["Scrum Master","Pod Lead"]'::jsonb)
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  stage_order = EXCLUDED.stage_order,
+  roles_allowed = EXCLUDED.roles_allowed;
 
 INSERT INTO integration_configs (id, provider, is_active, credentials)
 VALUES

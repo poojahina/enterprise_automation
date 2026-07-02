@@ -83,7 +83,7 @@ async function seed() {
         readinessScore: 95,
         targetSprintDate: '2026-07-01',
         gates: [
-          { name: 'PRD Approved', description: 'Product requirements are finalized', passed: true },
+          { name: 'PDD Complete', description: 'Process definition document is complete', passed: true },
           { name: 'Architecture Approved', description: 'Solution design signed off', passed: true }
         ],
         blockers: []

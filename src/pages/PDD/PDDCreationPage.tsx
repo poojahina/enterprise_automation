@@ -45,7 +45,7 @@ const PDDCreationPage: React.FC = () => {
     try {
       await useStore.getState().runWorkflowAction(opp.id, 'apply-pdd');
       setMessage('PDD generated and saved.');
-      if (goNext) navigate(getNextStageRoute('PRD Creation'));
+      if (goNext) navigate(getNextStageRoute('PDD Creation'));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Failed to generate PDD.');
     } finally {
@@ -108,7 +108,7 @@ const PDDCreationPage: React.FC = () => {
               <button onClick={exportPdd} disabled={!opp.pdd || exporting} className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 text-blue-400 rounded-lg text-sm disabled:opacity-40">
                 <Download className="w-4 h-4" />{exporting ? 'Exporting...' : 'Export PDD'}
               </button>
-              <button onClick={() => opp.pdd ? navigate(getNextStageRoute('PRD Creation')) : generate(true)} disabled={generating} className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 text-emerald-400 rounded-lg text-sm disabled:opacity-50">
+              <button onClick={() => opp.pdd ? navigate(getNextStageRoute('PDD Creation')) : generate(true)} disabled={generating} className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 text-emerald-400 rounded-lg text-sm disabled:opacity-50">
                 <CheckCircle className="w-4 h-4" />Continue to SDD
               </button>
             </div>

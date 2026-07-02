@@ -116,8 +116,8 @@ The default workflow contains these stages:
 | 3 | Qualified | `/qualification` |
 | 4 | Scored | `/scoring` |
 | 5 | Discovery | `/discovery` |
-| 6 | PDD Creation (`PRD Creation` compatibility status) | `/pdd` |
-| 7 | SDD Creation (`Solution Designed` persisted status) | `/sdd` |
+| 6 | PDD Creation | `/pdd` |
+| 7 | SDD Creation | `/sdd` |
 | 8 | ROI Approved | `/roi` |
 | 9 | Prioritized | `/prioritization` |
 | 10 | Pod Allocated | `/pods` |
@@ -127,6 +127,8 @@ Stage names, frontend routes, and opportunity statuses are related but are not i
 
 - `src/utils/pipeline.ts` on the frontend
 - `backend-dotnet/Services/PipelineResolver.cs` on the backend
+
+Legacy records using `PRD Creation` or `Solution Designed` are normalized by the mapping layer, but new stage configuration and workflow updates use `PDD Creation` and `SDD Creation`.
 
 When changing a stage name or adding a stage, update both mapping layers and the default stage data. Avoid hardcoding stage labels inside page-specific button handlers.
 

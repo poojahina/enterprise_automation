@@ -2,6 +2,16 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { AutomationOpportunity, Role } from '../models/types';
 
+const normalizeOpportunityStage = (opportunity: AutomationOpportunity): AutomationOpportunity => {
+  const legacyStages: Record<string, AutomationOpportunity['currentStage']> = {
+    'PRD Creation': 'PDD Creation',
+    'Solution Designed': 'SDD Creation',
+    'Solution Design': 'SDD Creation',
+  };
+  const currentStage = legacyStages[String(opportunity.currentStage)] ?? opportunity.currentStage;
+  return currentStage === opportunity.currentStage ? opportunity : { ...opportunity, currentStage };
+};
+
 interface StageConfig {
   id: string;
   name: string;
@@ -60,7 +70,7 @@ export const useStore = create<AppState>()(
           const res = await fetch('/api/opportunities');
           if (!res.ok) throw new Error('Failed to fetch opportunities');
 
-          const opportunities = await res.json();
+          const opportunities = (await res.json()).map(normalizeOpportunityStage);
           set({ opportunities });
         } catch (error) {
           console.error("Failed to fetch opportunities", error);
@@ -77,7 +87,7 @@ export const useStore = create<AppState>()(
           });
           if (!res.ok) throw new Error('Failed to create opportunity');
 
-          const newOpp = await res.json();
+          const newOpp = normalizeOpportunityStage(await res.json());
           set((state) => ({ opportunities: [...state.opportunities, newOpp] }));
         } catch (error) {
           console.error("Failed to create opportunity", error);
@@ -94,7 +104,7 @@ export const useStore = create<AppState>()(
           });
           if (!res.ok) throw new Error('Failed to update opportunity');
 
-          const updatedOpp = await res.json();
+          const updatedOpp = normalizeOpportunityStage(await res.json());
           set((state) => ({
             opportunities: state.opportunities.map((o) =>
               o.id === id ? { ...o, ...updatedOpp } : o
@@ -123,7 +133,7 @@ export const useStore = create<AppState>()(
             throw new Error(errorBody?.error ?? `Failed to run ${action}`);
           }
 
-          const updatedOpp = await res.json();
+          const updatedOpp = normalizeOpportunityStage(await res.json());
           set((state) => ({
             opportunities: state.opportunities.map((o) =>
               o.id === id ? { ...o, ...updatedOpp } : o

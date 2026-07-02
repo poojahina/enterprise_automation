@@ -227,9 +227,24 @@ public static class ApiEndpoints
     {
         foreach (var stage in DefaultData.Stages)
         {
-            if (!await db.StageConfigs.AnyAsync(s => s.Id == stage.Id))
+            var existingStage = await db.StageConfigs.FindAsync(stage.Id);
+            if (existingStage is null)
             {
-                db.StageConfigs.Add(stage);
+                db.StageConfigs.Add(new StageConfigEntity
+                {
+                    Id = stage.Id,
+                    Name = stage.Name,
+                    Order = stage.Order,
+                    IsEnabled = stage.IsEnabled,
+                    RolesAllowed = stage.RolesAllowed,
+                    ConfigOptions = stage.ConfigOptions,
+                });
+            }
+            else
+            {
+                existingStage.Name = stage.Name;
+                existingStage.Order = stage.Order;
+                existingStage.RolesAllowed = stage.RolesAllowed;
             }
         }
 

@@ -11,7 +11,7 @@ const SolutionPage: React.FC = () => {
   const { opportunities, selectedOpportunityId, setSelectedOpportunityId } = useStore();
   const [selectedId, setSelectedId] = useState<string>(
     selectedOpportunityId ??
-    opportunities.find(o => o.currentStage === 'Solution Designed' || o.currentStage === 'PRD Creation')?.id ??
+    opportunities.find(o => o.currentStage === 'SDD Creation' || o.currentStage === 'PDD Creation')?.id ??
     opportunities.find(o => o.solution)?.id ??
     opportunities[0]?.id ??
     ''
@@ -38,7 +38,7 @@ const SolutionPage: React.FC = () => {
       setSelectedOpportunityId(opp.id);
       await useStore.getState().runWorkflowAction(opp.id, 'generate-solution');
       if (goNext) {
-        navigate(getNextStageRoute('Solution Designed'));
+        navigate(getNextStageRoute('SDD Creation'));
       } else {
         setMessage('Solution recommendation generated.');
       }
@@ -86,7 +86,7 @@ const SolutionPage: React.FC = () => {
                 {generating ? 'Generating SDD...' : opp.solution ? 'Regenerate SDD' : 'Generate SDD'}
               </button>
               <button
-                onClick={() => opp.solution ? navigate(getNextStageRoute('Solution Designed')) : generateSolution(true)}
+                onClick={() => opp.solution ? navigate(getNextStageRoute('SDD Creation')) : generateSolution(true)}
                 disabled={generating}
                 className="flex items-center gap-1.5 bg-emerald-500/20 text-emerald-400 text-xs font-semibold px-4 py-2 rounded-lg hover:bg-emerald-500/30 transition-colors disabled:opacity-50"
               >
@@ -95,7 +95,7 @@ const SolutionPage: React.FC = () => {
               </button>
               {opp.solution && (
                 <button
-                  onClick={() => navigate(getNextStageRoute('Solution Designed'))}
+                  onClick={() => navigate(getNextStageRoute('SDD Creation'))}
                   disabled={generating}
                   className="flex items-center gap-1.5 bg-blue-500/20 text-blue-400 text-xs font-semibold px-4 py-2 rounded-lg hover:bg-blue-500/30 transition-colors disabled:opacity-50"
                 >
