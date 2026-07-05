@@ -16,6 +16,7 @@ export type PipelineStage =
   | 'Scored'
   | 'Discovery'
   | 'PDD Creation'
+  | 'A2B Readiness Check'
   | 'SDD Creation'
   | 'ROI Approved'
   | 'Prioritized'
@@ -154,6 +155,22 @@ export interface ProcessDefinitionDocument {
   targetProcess: string[];
   controls: string[];
   openItems: string[];
+}
+
+export type A2BDecision = 'READY' | 'NOT_READY' | 'READY_WITH_RISKS' | 'NOT_RUN';
+export interface A2BResult {
+  id: string;
+  criterionId: string;
+  criterionName: string;
+  category: string;
+  severity: 'mandatory' | 'recommended' | 'optional';
+  status: 'passed' | 'failed' | 'partial' | 'not_applicable';
+  confidenceScore: number;
+  evidenceFound: string;
+  missingInformation: string;
+  recommendation: string;
+  sourceDocumentId?: string;
+  sourceLocation?: string;
 }
 
 // ─── Solution Recommendation ─────────────────────────────────

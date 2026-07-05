@@ -27,6 +27,7 @@ interface AppState {
   // ── Stages ────────────────────────────────────
   stages: StageConfig[];
   fetchStages: () => Promise<void>;
+  saveStages: (stages: StageConfig[]) => Promise<void>;
 
   // ── Opportunities ─────────────────────────────
   opportunities: AutomationOpportunity[];
@@ -114,6 +115,20 @@ export const useStore = create<AppState>()(
           console.error("Failed to update opportunity", error);
           throw error;
         }
+      },
+      saveStages: async (stages) => {
+        const res = await fetch('/api/stages', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ stages }),
+        });
+        if (!res.ok) {
+          const errorBody = await res.json().catch(() => null);
+          throw new Error(errorBody?.error ?? 'Failed to save stage configuration');
+        }
+
+        const savedStages = await res.json();
+        set({ stages: savedStages });
       },
 
       runWorkflowAction: async (id, action, payload = {}) => {

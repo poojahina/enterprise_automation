@@ -109,7 +109,7 @@ const PDDCreationPage: React.FC = () => {
                 <Download className="w-4 h-4" />{exporting ? 'Exporting...' : 'Export PDD'}
               </button>
               <button onClick={() => opp.pdd ? navigate(getNextStageRoute('PDD Creation')) : generate(true)} disabled={generating} className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 text-emerald-400 rounded-lg text-sm disabled:opacity-50">
-                <CheckCircle className="w-4 h-4" />Continue to SDD
+                <CheckCircle className="w-4 h-4" />Continue to A2B
               </button>
             </div>
           </div>

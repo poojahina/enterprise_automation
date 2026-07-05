@@ -14,53 +14,38 @@ const StageConfigPanel: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [isError, setIsError] = useState(false);
+  const globalStages = useStore(state => state.stages);
   const fetchGlobalStages = useStore(state => state.fetchStages);
+  const saveStages = useStore(state => state.saveStages);
 
   useEffect(() => {
-    fetchStages();
-  }, []);
+    fetchGlobalStages()
+      .catch((error) => {
+        setIsError(true);
+        setMessage(error instanceof Error ? error.message : 'Failed to fetch stage configuration.');
+      })
+      .finally(() => setLoading(false));
+  }, [fetchGlobalStages]);
 
-  const fetchStages = async () => {
-    try {
-      const res = await fetch('/api/stages');
-      if (!res.ok) {
-        throw new Error('Stage configuration could not be loaded.');
-      }
-      const data = await res.json();
-      setStages(data);
-    } catch (error) {
-      console.error('Failed to fetch stages:', error);
-      setMessage(error instanceof Error ? error.message : 'Failed to fetch stage configuration.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    if (!saving) setStages(globalStages);
+  }, [globalStages, saving]);
 
   const toggleStage = (id: string) => {
+    setMessage('');
     setStages(prev => prev.map(s => s.id === id ? { ...s, isEnabled: !s.isEnabled } : s));
   };
 
   const handleSave = async () => {
     setSaving(true);
     setMessage('');
+    setIsError(false);
     try {
-      await Promise.all(stages.map(async (stage) => {
-        const res = await fetch(`/api/stages/${stage.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            isEnabled: stage.isEnabled,
-            order: stage.order,
-          }),
-        });
-
-        if (!res.ok) {
-          throw new Error(`Failed to save ${stage.name}.`);
-        }
-      }));
-      await fetchGlobalStages();
+      await saveStages(stages);
       setMessage('Stage configuration saved successfully. The pipeline will now skip disabled stages.');
     } catch (error) {
+      setIsError(true);
       setMessage(error instanceof Error ? error.message : 'Failed to save configuration.');
     } finally {
       setSaving(false);
@@ -97,7 +82,14 @@ const StageConfigPanel: React.FC = () => {
                 <td className="px-6 py-4 font-medium text-gray-200">{stage.name}</td>
                 <td className="px-6 py-4 text-right">
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" checked={stage.isEnabled} onChange={() => toggleStage(stage.id)} />
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      aria-label={`${stage.isEnabled ? 'Disable' : 'Enable'} ${stage.name}`}
+                      checked={stage.isEnabled}
+                      disabled={saving}
+                      onChange={() => toggleStage(stage.id)}
+                    />
                     <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
                   </label>
                 </td>
@@ -108,7 +100,7 @@ const StageConfigPanel: React.FC = () => {
       </div>
 
       {message && (
-        <div className="flex items-center gap-2 p-4 bg-blue-500/10 text-blue-400 rounded-lg border border-blue-500/20">
+        <div className={`flex items-center gap-2 p-4 rounded-lg border ${isError ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}`}>
           <AlertCircle className="w-5 h-5" />
           <p className="text-sm">{message}</p>
         </div>

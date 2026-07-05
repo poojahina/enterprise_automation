@@ -33,6 +33,45 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Update the complete configuration atomically.
+router.put('/', async (req, res) => {
+  const requestedStages = req.body?.stages;
+  if (!Array.isArray(requestedStages) || requestedStages.length === 0) {
+    return res.status(400).json({ error: 'At least one stage is required' });
+  }
+
+  const ids = new Set<string>();
+  for (const stage of requestedStages) {
+    if (!stage || typeof stage.id !== 'string' || ids.has(stage.id)) {
+      return res.status(400).json({ error: 'Every stage must have a unique id' });
+    }
+    if (typeof stage.isEnabled !== 'boolean') {
+      return res.status(400).json({ error: `isEnabled must be true or false for ${stage.id}` });
+    }
+    ids.add(stage.id);
+  }
+
+  try {
+    const existingCount = await prisma.stageConfig.count({ where: { id: { in: [...ids] } } });
+    if (existingCount !== ids.size) {
+      return res.status(400).json({ error: 'The configuration contains an unknown stage' });
+    }
+
+    await prisma.$transaction(
+      requestedStages.map(stage =>
+        prisma.stageConfig.update({
+          where: { id: stage.id },
+          data: { isEnabled: stage.isEnabled },
+        })
+      )
+    );
+    const saved = await prisma.stageConfig.findMany({ orderBy: { order: 'asc' } });
+    return res.json(saved);
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to save stage configuration' });
+  }
+});
+
 // Update a stage configuration
 router.put('/:id', async (req, res) => {
   const { id } = req.params;

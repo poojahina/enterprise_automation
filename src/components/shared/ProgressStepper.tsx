@@ -15,6 +15,7 @@ const FALLBACK_STAGES: PipelineStage[] = [
   'Scored',
   'Discovery',
   'PDD Creation',
+  'A2B Readiness Check',
   'SDD Creation',
   'ROI Approved',
   'Prioritized',

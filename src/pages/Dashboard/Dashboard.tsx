@@ -88,7 +88,7 @@ const Dashboard: React.FC = () => {
             <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-white">Automation Opportunity Intake Hub</h1>
+            <h1 className="text-2xl font-bold text-white">Factory HUB</h1>
           </div>
           <p className="text-base font-semibold text-blue-200 max-w-3xl leading-relaxed">
             Standardized, AI-driven intake pipeline that converts ideas into prioritized, sprint-ready automation opportunities.

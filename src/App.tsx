@@ -9,6 +9,7 @@ import QualificationPage from './pages/Qualification/QualificationPage';
 import ScoringPage from './pages/Scoring/ScoringPage';
 import DiscoveryWorkspace from './pages/Discovery/DiscoveryWorkspace';
 import PDDCreationPage from './pages/PDD/PDDCreationPage';
+import A2BReadinessPage from './pages/A2B/A2BReadinessPage';
 import SolutionPage from './pages/Solution/SolutionPage';
 import UserStoriesPage from './pages/UserStories/UserStoriesPage';
 import ROICalculator from './pages/ROI/ROICalculator';
@@ -38,6 +39,8 @@ const App: React.FC = () => {
         <Route path="/scoring" element={<ScoringPage />} />
         <Route path="/discovery" element={<DiscoveryWorkspace />} />
         <Route path="/pdd" element={<PDDCreationPage />} />
+        <Route path="/a2b" element={<A2BReadinessPage />} />
+        <Route path="/projects/:projectId/a2b" element={<A2BReadinessPage />} />
         <Route path="/prd" element={<Navigate to="/pdd" replace />} />
         <Route path="/sdd" element={<SolutionPage />} />
         <Route path="/solution" element={<Navigate to="/sdd" replace />} />

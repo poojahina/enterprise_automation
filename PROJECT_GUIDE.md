@@ -128,7 +128,7 @@ Stage names, frontend routes, and opportunity statuses are related but are not i
 - `src/utils/pipeline.ts` on the frontend
 - `backend-dotnet/Services/PipelineResolver.cs` on the backend
 
-Legacy records using `PRD Creation` or `Solution Designed` are normalized by the mapping layer, but new stage configuration and workflow updates use `PDD Creation` and `SDD Creation`.
+Legacy records using `PRD Creation` or `Solution Designed` are normalized by the mapping layer. The governed design handoff now follows `PDD Creation` -> `A2B Readiness Check` -> `SDD Creation`; SDD generation requires an A2B `READY` result or an authorized, audited override.
 
 When changing a stage name or adding a stage, update both mapping layers and the default stage data. Avoid hardcoding stage labels inside page-specific button handlers.
 

@@ -11,6 +11,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 builder.Services.AddScoped<PipelineResolver>();
+builder.Services.AddScoped<A2BReadinessService>();
 builder.Services.AddSingleton<WorkflowEngine>();
 
 builder.Services.AddCors(options =>

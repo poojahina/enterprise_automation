@@ -15,6 +15,7 @@ const pipelineStages: PipelineConfigStage[] = [
   { name: 'Scoring', route: '/scoring', status: 'Scored', aliases: ['Scored'] },
   { name: 'Discovery', route: '/discovery', status: 'Discovery', aliases: [] },
   { name: 'PDD Creation', route: '/pdd', status: 'PDD Creation', aliases: ['PRD Creation'] },
+  { name: 'A2B Readiness Check', route: '/a2b', status: 'A2B Readiness Check', aliases: ['A2B'] },
   { name: 'SDD Creation', route: '/sdd', status: 'SDD Creation', aliases: ['Solution Design', 'Solution Designed'] },
   { name: 'ROI Approved', route: '/roi', status: 'ROI Approved', aliases: ['ROI'] },
   { name: 'Prioritized', route: '/prioritization', status: 'Prioritized', aliases: ['Prioritization'] },

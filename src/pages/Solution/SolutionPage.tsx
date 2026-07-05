@@ -18,6 +18,7 @@ const SolutionPage: React.FC = () => {
   );
   const [generating, setGenerating] = useState(false);
   const [message, setMessage] = useState('');
+  const [sddEnabled, setSddEnabled] = useState(false);
   const opp = opportunities.find(o => o.id === selectedId);
 
   useEffect(() => {
@@ -29,6 +30,14 @@ const SolutionPage: React.FC = () => {
   useEffect(() => {
     if (selectedId) setSelectedOpportunityId(selectedId);
   }, [selectedId, setSelectedOpportunityId]);
+
+  useEffect(() => {
+    if (!selectedId) return;
+    fetch(`/api/projects/${selectedId}/a2b/status`)
+      .then(async response => response.ok ? response.json() : Promise.reject(new Error('Unable to verify A2B status.')))
+      .then(data => setSddEnabled(Boolean(data.sddEnabled)))
+      .catch(error => { setSddEnabled(false); setMessage(error.message); });
+  }, [selectedId]);
 
   const generateSolution = async (goNext = false) => {
     if (!opp) return;
@@ -81,13 +90,13 @@ const SolutionPage: React.FC = () => {
               <p className="text-xs text-gray-400 mt-1">Generate architecture, components, integrations, security, and monitoring recommendations.</p>
             </div>
             <div className="flex flex-wrap items-center justify-end gap-2">
-              <button onClick={() => generateSolution(false)} disabled={generating} className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 text-sm">
+              <button onClick={() => generateSolution(false)} disabled={generating || !sddEnabled} title={!sddEnabled ? 'Complete or override A2B first' : undefined} className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 text-sm">
                 <Sparkles className="w-4 h-4" />
                 {generating ? 'Generating SDD...' : opp.solution ? 'Regenerate SDD' : 'Generate SDD'}
               </button>
               <button
                 onClick={() => opp.solution ? navigate(getNextStageRoute('SDD Creation')) : generateSolution(true)}
-                disabled={generating}
+                disabled={generating || !sddEnabled}
                 className="flex items-center gap-1.5 bg-emerald-500/20 text-emerald-400 text-xs font-semibold px-4 py-2 rounded-lg hover:bg-emerald-500/30 transition-colors disabled:opacity-50"
               >
                 <CheckCircle className="w-3.5 h-3.5" />
@@ -106,6 +115,7 @@ const SolutionPage: React.FC = () => {
             </div>
           </div>
           {message && <p className="mt-3 text-sm text-blue-300">{message}</p>}
+          {!sddEnabled && <p className="mt-3 text-sm text-amber-300">SDD is locked. Complete the A2B readiness check or obtain an authorized override.</p>}
         </AnimatedCard>
       )}
 

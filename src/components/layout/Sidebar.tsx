@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, FileStack, Workflow, CheckSquare, BarChart3,
   Search as SearchIcon, Lightbulb, Calculator, Kanban, Users,
-  Rocket, FileText, ChevronLeft, ChevronRight, Zap, FileSignature, Settings
+  Rocket, FileText, ChevronLeft, ChevronRight, Zap, FileSignature, Settings, ClipboardCheck
 } from 'lucide-react';
 import { useStore } from '../../state/store';
 import { getEnabledPipelineStageStatuses, getStageStatusByRoute } from '../../utils/pipeline';
@@ -16,6 +16,7 @@ const navItems = [
   { name: 'Scoring', path: '/scoring', icon: BarChart3 },
   { name: 'Discovery', path: '/discovery', icon: SearchIcon },
   { name: 'PDD Creation', path: '/pdd', icon: FileSignature },
+  { name: 'A2B Readiness', path: '/a2b', icon: ClipboardCheck },
   { name: 'SDD Creation', path: '/sdd', icon: Lightbulb },
   { name: 'User Stories', path: '/user-stories', icon: FileText },
   { name: 'ROI Calculator', path: '/roi', icon: Calculator },
@@ -48,7 +49,7 @@ const Sidebar: React.FC = () => {
         </div>
         {!sidebarCollapsed && (
           <div className="animate-fade-in">
-            <p className="text-sm font-bold text-white leading-tight">Intake Hub</p>
+            <p className="text-sm font-bold text-white leading-tight">Factory HUB</p>
             <p className="text-[9px] text-gray-400 uppercase tracking-wider">Automation COE</p>
           </div>
         )}
