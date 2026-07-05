@@ -2,37 +2,26 @@ import type { AutomationOpportunity, PodAllocation, AutomationType } from '../mo
 
 const POD_CATALOG: PodAllocation[] = [
   {
-    podName: 'Agentic AI Squad',
+    podName: 'Azure AI Engineering Squad',
     podLead: 'Priya Sharma',
     teamSize: 6,
-    skills: ['LangChain', 'Multi-Agent Systems', 'GenAI', 'Python', 'Azure OpenAI'],
+    skills: ['Microsoft Foundry', 'Azure OpenAI', 'Document Intelligence', 'Azure AI Search', 'Python'],
     currentCapacity: 40,
     assignedOpportunities: 2,
-    specialization: 'Hyperautomation/Agentic Automation',
+    specialization: 'Azure AI',
     deliveryRisk: 'Medium',
-    notes: 'Specializes in agentic orchestration and multi-system AI workflows',
+    notes: 'Specializes in governed Azure AI, document intelligence, retrieval, and agent solutions.',
   },
   {
-    podName: 'RPA Center of Excellence',
+    podName: 'Automation Anywhere Center of Excellence',
     podLead: 'Michael Chen',
     teamSize: 8,
-    skills: ['UiPath', 'Automation Anywhere', 'Blue Prism', '.NET', 'SQL'],
+    skills: ['Automation Anywhere', 'Control Room', 'Bot Creator', 'Bot Runner', 'Document Automation'],
     currentCapacity: 60,
     assignedOpportunities: 3,
-    specialization: 'RPA',
+    specialization: 'Automation Anywhere',
     deliveryRisk: 'Low',
-    notes: 'Mature team with 50+ bot deliveries. Strong governance framework.',
-  },
-  {
-    podName: 'Intelligent Automation Lab',
-    podLead: 'Sarah Rodriguez',
-    teamSize: 5,
-    skills: ['Document AI', 'NLP', 'Computer Vision', 'Python', 'Azure Cognitive Services'],
-    currentCapacity: 55,
-    assignedOpportunities: 2,
-    specialization: 'Intelligent Automation',
-    deliveryRisk: 'Medium',
-    notes: 'Expert in document processing, OCR, and AI/ML pipelines',
+    notes: 'Specializes in governed attended and unattended Automation Anywhere bot delivery.',
   },
   {
     podName: 'Power Platform Guild',
@@ -41,7 +30,7 @@ const POD_CATALOG: PodAllocation[] = [
     skills: ['Power Automate', 'Power Apps', 'Power BI', 'SharePoint', 'Dataverse'],
     currentCapacity: 70,
     assignedOpportunities: 4,
-    specialization: 'Power Automate/Power Platform',
+    specialization: 'Power Platform',
     deliveryRisk: 'Low',
     notes: 'Citizen developer enablement team. Rapid delivery of workflow automation.',
   },
@@ -52,7 +41,7 @@ const POD_CATALOG: PodAllocation[] = [
  * Considers pod specialization, current capacity, and skills alignment.
  */
 export function recommendPod(opp: AutomationOpportunity): PodAllocation {
-  const automationType = opp.classification?.recommendedType ?? 'RPA';
+  const automationType = opp.classification?.recommendedType ?? 'Power Platform';
 
   // Primary match: specialization
   const primaryMatch = POD_CATALOG.find(p => p.specialization === automationType);

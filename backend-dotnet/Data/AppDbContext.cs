@@ -25,9 +25,16 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.Property(e => e.ProcessName).HasColumnName("process_name").IsRequired();
             entity.Property(e => e.CurrentStage).HasColumnName("current_stage").IsRequired();
             entity.Property(e => e.Status).HasColumnName("status").IsRequired();
+            entity.Property(e => e.A2BStatus).HasColumnName("a2b_status").IsRequired();
+            entity.Property(e => e.A2BLastRunId).HasColumnName("a2b_last_run_id");
+            entity.Property(e => e.SddEnabled).HasColumnName("sdd_enabled");
             entity.Property(e => e.Data).HasColumnName("data").HasColumnType("jsonb").IsRequired();
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+            entity.HasOne<A2BReadinessRunEntity>()
+                .WithMany()
+                .HasForeignKey(e => e.A2BLastRunId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<StageConfigEntity>(entity =>
@@ -146,6 +153,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.Property(e => e.AuthorizedBy).HasColumnName("authorized_by");
             entity.Property(e => e.Role).HasColumnName("role");
             entity.Property(e => e.Reason).HasColumnName("reason");
+            entity.Property(e => e.IsActive).HasColumnName("is_active");
+            entity.Property(e => e.InvalidatedAt).HasColumnName("invalidated_at");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.HasOne<OpportunityEntity>().WithMany().HasForeignKey(e => e.ProjectId).OnDelete(DeleteBehavior.Cascade);
         });

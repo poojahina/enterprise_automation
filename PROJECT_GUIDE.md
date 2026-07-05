@@ -8,6 +8,23 @@ This document is the primary technical guide for the Enterprise Automation Oppor
 
 The application manages automation opportunities through an end-to-end enterprise delivery pipeline. A user submits an opportunity, and the application moves it through classification, qualification, scoring, discovery, requirements creation, solution design, ROI approval, prioritization, pod allocation, and sprint readiness.
 
+Factory HUB supports exactly three solution technology tracks:
+
+- **Power Platform**: Power Apps, Power Automate, Dataverse, approved connectors, and Power BI.
+- **Automation Anywhere**: Control Room, attended or unattended Bot Runners, workload queues, credential vault, Document Automation, and Bot Insight.
+- **Azure AI**: Microsoft Foundry, Azure OpenAI, Azure AI Search, Azure Document Intelligence, Content Safety, and Azure monitoring.
+
+Legacy classification values are normalized when read: `Power Automate/Power Platform` becomes `Power Platform`, `RPA` becomes `Automation Anywhere`, and both `Intelligent Automation` and `Hyperautomation/Agentic Automation` become `Azure AI`.
+
+For an existing PostgreSQL database, apply [20260705_add_a2b_readiness.sql](backend-dotnet/Data/migrations/20260705_add_a2b_readiness.sql) once before starting the updated API. New databases should use [init-postgres.sql](backend-dotnet/Data/init-postgres.sql), which already includes the same A2B columns, tables, indexes, stages, and seed criteria.
+
+If you intentionally run the legacy SQLite/Node backend, regenerate and apply its Prisma schema after pulling these changes:
+
+```powershell
+npm run prisma:generate
+npm run prisma:push
+```
+
 The active application architecture is:
 
 ```text

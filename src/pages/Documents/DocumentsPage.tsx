@@ -284,10 +284,18 @@ function fallbackPrd(opp: AutomationOpportunity) {
 }
 
 function fallbackSolution(opp: AutomationOpportunity) {
-  const type = opp.score?.recommendedAutomationType ?? opp.classification?.recommendedType ?? 'RPA';
+  const rawType = opp.score?.recommendedAutomationType ?? opp.classification?.recommendedType ?? 'Power Platform';
+  const type = rawType === 'RPA' ? 'Automation Anywhere'
+    : rawType === 'Power Automate/Power Platform' ? 'Power Platform'
+    : rawType === 'Intelligent Automation' || rawType === 'Hyperautomation/Agentic Automation' ? 'Azure AI'
+    : rawType;
   return {
     toBeSummary: `Enterprise ${type} solution for ${opp.processName}, covering intake, validation, orchestration, exception handling, audit, and reporting.`,
-    recommendedTechnology: type === 'Power Automate/Power Platform' ? 'Power Automate, Dataverse, Power Apps, SharePoint, Power BI' : type === 'Intelligent Automation' ? 'Document AI, workflow queue, API/RPA worker, monitoring' : type === 'Hyperautomation/Agentic Automation' ? 'LLM-assisted orchestrator, enterprise APIs, workflow queue, human review console' : 'UiPath Orchestrator, unattended bot workers, SQL audit store, API/file adapters',
+    recommendedTechnology: type === 'Power Platform'
+      ? 'Power Apps, Power Automate, Dataverse, approved connectors, and Power BI'
+      : type === 'Automation Anywhere'
+        ? 'Automation Anywhere Control Room, Bot Creator, Bot Runners, credential vault, workload queues, and Bot Insight'
+        : 'Microsoft Foundry, Azure OpenAI, Azure AI Search, Azure Document Intelligence, Content Safety, and Application Insights',
     architectureSummary: 'Intake layer -> validation/rules -> workflow orchestration -> automation workers -> integration adapters -> exception workbench -> audit and reporting.',
     components: ['Intake console', 'Canonical workflow data model', 'Validation service', 'Rules engine', 'Workflow orchestrator', 'Automation worker layer', 'Integration adapters', 'Exception and approval workbench', 'Audit store', 'Monitoring dashboard'],
     integrations: [...opp.technical.applications, 'Identity provider', 'Secrets vault', 'Enterprise logging/SIEM', 'Reporting layer'].filter(Boolean),

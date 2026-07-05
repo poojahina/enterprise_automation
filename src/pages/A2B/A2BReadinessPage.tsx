@@ -14,7 +14,7 @@ interface A2BPayload {
 const A2BReadinessPage: React.FC = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
-  const { opportunities, selectedOpportunityId, setSelectedOpportunityId } = useStore();
+  const { opportunities, selectedOpportunityId, setSelectedOpportunityId, fetchOpportunities, role } = useStore();
   const [selectedId, setSelectedId] = useState(projectId ?? selectedOpportunityId ?? opportunities[0]?.id ?? '');
   const [payload, setPayload] = useState<A2BPayload>({ run: null, results: [] });
   const [sddEnabled, setSddEnabled] = useState(false);
@@ -49,6 +49,7 @@ const A2BReadinessPage: React.FC = () => {
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail ?? data.error ?? 'A2B check failed.');
       await load();
+      await fetchOpportunities();
       setMessage(`A2B completed: ${data.status}.`);
     } catch (error) { setMessage(error instanceof Error ? error.message : 'A2B check failed.'); }
     finally { setRunning(false); }
@@ -59,7 +60,7 @@ const A2BReadinessPage: React.FC = () => {
     if (!reason) return;
     const response = await fetch(`/api/projects/${selectedId}/a2b/override`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ authorizedBy: 'Current User', role: 'Solution Architect', reason })
+      body: JSON.stringify({ authorizedBy: 'Current User', role, reason })
     });
     const data = await response.json();
     if (!response.ok) { setMessage(data.error ?? 'Override failed.'); return; }
@@ -76,17 +77,17 @@ const A2BReadinessPage: React.FC = () => {
         {opportunities.map(o => <option key={o.id} value={o.id} className="bg-gray-900">{o.id} — {o.processName}</option>)}
       </select>
       {opp && <ProgressStepper currentStage={opp.currentStage} />}
-      <div className="grid gap-3 md:grid-cols-5">
+      <div className="grid gap-3 md:grid-cols-6">
         <AnimatedCard><p className="text-xs text-gray-400">Decision</p><p className="mt-1 font-bold text-white">{payload.run?.status ?? 'NOT_RUN'}</p></AnimatedCard>
         <AnimatedCard><p className="text-xs text-gray-400">Score</p><p className="mt-1 font-bold text-white">{payload.run?.overallScore ?? 0}%</p></AnimatedCard>
-        {['passed','failed','partial'].map(status => <AnimatedCard key={status}><p className="text-xs capitalize text-gray-400">{status}</p><p className="mt-1 font-bold text-white">{counts[status] ?? 0}</p></AnimatedCard>)}
+        {['passed','failed','partial','not_applicable'].map(status => <AnimatedCard key={status}><p className="text-xs capitalize text-gray-400">{status.replace('_', ' ')}</p><p className="mt-1 font-bold text-white">{counts[status] ?? 0}</p></AnimatedCard>)}
       </div>
       <AnimatedCard>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div><h2 className="font-semibold text-white">Readiness controls</h2><p className="text-xs text-gray-400">Every active database criterion is evaluated against the PDD and uploaded project documents.</p></div>
           <div className="flex gap-2">
             <button onClick={runCheck} disabled={running || !selectedId} className="flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm text-white disabled:opacity-50"><Play className="h-4 w-4" />{running ? 'Running...' : 'Run A2B Check'}</button>
-            <button onClick={override} disabled={!selectedId || sddEnabled} className="flex items-center gap-2 rounded-lg bg-amber-500/20 px-4 py-2 text-sm text-amber-300 disabled:opacity-40"><ShieldCheck className="h-4 w-4" />Authorized Override</button>
+            <button onClick={override} disabled={!selectedId || sddEnabled || !['Product Owner', 'Solution Architect', 'Automation COE Analyst'].includes(role)} className="flex items-center gap-2 rounded-lg bg-amber-500/20 px-4 py-2 text-sm text-amber-300 disabled:opacity-40"><ShieldCheck className="h-4 w-4" />Authorized Override</button>
             <button onClick={() => navigate('/sdd')} disabled={!sddEnabled} className="flex items-center gap-2 rounded-lg bg-emerald-500/20 px-4 py-2 text-sm text-emerald-300 disabled:opacity-40"><CheckCircle className="h-4 w-4" />Continue to SDD</button>
           </div>
         </div>

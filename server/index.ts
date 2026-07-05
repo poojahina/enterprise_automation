@@ -10,6 +10,7 @@ import contextRoutes from './routes/context';
 import workflowRoutes from './routes/workflow';
 import documentRoutes from './routes/documents';
 import artifactRoutes from './routes/artifacts';
+import a2bRoutes from './routes/a2b';
 import { prisma } from './prismaClient';
 
 dotenv.config();
@@ -29,6 +30,7 @@ app.use('/api/context', contextRoutes);
 app.use('/api/workflow', workflowRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/artifacts', artifactRoutes);
+app.use('/api', a2bRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { prisma } from '../prismaClient';
 import { resolveNextStage } from '../utils/pipelineResolver';
 import { normalizeOpportunityPayload, parseOpportunityData } from '../utils/opportunityMapper';
+import { invalidateA2B } from '../services/a2bGate';
 
 const router = Router();
 
@@ -114,13 +115,18 @@ router.put('/:id', async (req, res) => {
 
     const currentData = parseOpportunityData(current);
     const updates = toRecord(req.body);
-    const updatedData = appendAuditTrail(
+    if ((updates.currentStage === 'SDD Creation' || updates.solution != null) && !(current as any).sddEnabled) {
+      return res.status(409).json({ error: 'SDD changes are blocked until A2B is READY or overridden.', code: 'A2B_NOT_READY' });
+    }
+    let updatedData = appendAuditTrail(
       normalizeOpportunityPayload({ ...currentData, ...updates, id: current.id }),
       'Opportunity Updated',
       'Updated opportunity details',
       typeof updates.performedBy === 'string' ? updates.performedBy : 'System',
       typeof updates.role === 'string' ? updates.role : 'System'
     );
+    const invalidatesReadiness = updates.pdd != null || updates.discovery != null;
+    if (invalidatesReadiness) updatedData = await invalidateA2B(current.id, updatedData);
 
     const updated = await prisma.opportunity.update({
       where: { id: req.params.id },
@@ -128,6 +134,7 @@ router.put('/:id', async (req, res) => {
         processName: String(updatedData.processName ?? current.processName),
         currentStage: String(updatedData.currentStage ?? current.currentStage),
         status: String(updatedData.status ?? updatedData.pipelineStatus ?? current.status),
+        ...(invalidatesReadiness ? { a2bStatus: 'NOT_RUN', a2bLastRunId: null, sddEnabled: false } : {}),
         data: JSON.stringify(updatedData),
       },
     });
@@ -152,6 +159,9 @@ router.post('/:id/advance', async (req, res) => {
 
     if (!nextStage) {
       return res.status(400).json({ error: 'No next enabled stage is available' });
+    }
+    if (nextStage === 'SDD Creation' && !(current as any).sddEnabled) {
+      return res.status(409).json({ error: 'Cannot advance to SDD until A2B is READY or overridden.', code: 'A2B_NOT_READY' });
     }
 
     const currentData = parseOpportunityData(current);

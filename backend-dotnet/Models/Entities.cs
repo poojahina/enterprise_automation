@@ -6,6 +6,9 @@ public sealed class OpportunityEntity
     public string ProcessName { get; set; } = "";
     public string CurrentStage { get; set; } = "Submitted";
     public string Status { get; set; } = "Active";
+    public string A2BStatus { get; set; } = "NOT_RUN";
+    public string? A2BLastRunId { get; set; }
+    public bool SddEnabled { get; set; }
     public string Data { get; set; } = "{}";
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
@@ -100,5 +103,7 @@ public sealed class A2BOverrideEntity
     public string AuthorizedBy { get; set; } = "";
     public string Role { get; set; } = "";
     public string Reason { get; set; } = "";
+    public bool IsActive { get; set; } = true;
+    public DateTime? InvalidatedAt { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

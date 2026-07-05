@@ -16,11 +16,10 @@ import AnimatedCard from '../../components/shared/AnimatedCard';
 import type { AutomationType, PipelineStage } from '../../models/types';
 import { getEnabledPipelineStageStatuses, getStageRoute } from '../../utils/pipeline';
 
-const COLORS: Record<AutomationType, string> = {
-  'Hyperautomation/Agentic Automation': '#a78bfa',
-  'RPA': '#60a5fa',
-  'Intelligent Automation': '#22d3ee',
-  'Power Automate/Power Platform': '#fbbf24',
+const COLORS: Record<string, string> = {
+  'Azure AI': '#a78bfa',
+  'Automation Anywhere': '#60a5fa',
+  'Power Platform': '#fbbf24',
 };
 
 const Dashboard: React.FC = () => {

@@ -19,6 +19,9 @@ public static class OpportunityJson
         data["currentStage"] = entity.CurrentStage;
         data["status"] = entity.Status;
         data["pipelineStatus"] = entity.Status;
+        data["a2bStatus"] = entity.A2BStatus;
+        data["a2bLastRunId"] = entity.A2BLastRunId;
+        data["sddEnabled"] = entity.SddEnabled;
         return data;
     }
 
@@ -31,6 +34,8 @@ public static class OpportunityJson
         payload["backlogItems"] ??= new JsonArray();
         payload["complianceChecks"] ??= new JsonArray();
         payload["auditTrail"] ??= new JsonArray();
+        payload["a2bStatus"] ??= "NOT_RUN";
+        payload["sddEnabled"] ??= false;
         return payload;
     }
 

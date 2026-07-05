@@ -1,156 +1,74 @@
-import type { ProcessCharacteristics, ClassificationResult, AutomationType } from '../models/types';
+import type { ProcessCharacteristics, ClassificationResult, SupportedAutomationType } from '../models/types';
 
-/**
- * Classify an automation opportunity into one of four types based on
- * process characteristics using rule-based logic.
- *
- * Classification hierarchy:
- * 1. Hyperautomation/Agentic — high autonomy, reasoning + multi-system + GenAI
- * 2. Intelligent Automation — document understanding, NLP, GenAI without multi-system
- * 3. RPA — rule-based, structured data, no reasoning
- * 4. Power Automate/Power Platform — workflow automation, API-driven, low complexity
- */
 export function classifyAutomationType(chars: ProcessCharacteristics): ClassificationResult {
-  const scores: Record<AutomationType, number> = {
-    'Hyperautomation/Agentic Automation': 0,
-    'RPA': 0,
-    'Intelligent Automation': 0,
-    'Power Automate/Power Platform': 0,
+  const scores: Record<SupportedAutomationType, number> = {
+    'Power Platform': 0,
+    'Automation Anywhere': 0,
+    'Azure AI': 0,
   };
 
-  // ── Hyperautomation/Agentic scoring ────────────────────────
-  if (chars.autonomyLevel >= 4) scores['Hyperautomation/Agentic Automation'] += 30;
-  if (chars.autonomyLevel >= 3) scores['Hyperautomation/Agentic Automation'] += 10;
-  if (chars.requiresReasoning) scores['Hyperautomation/Agentic Automation'] += 20;
-  if (chars.requiresMultiSystemOrchestration) scores['Hyperautomation/Agentic Automation'] += 20;
-  if (chars.usesGenAI) scores['Hyperautomation/Agentic Automation'] += 15;
-  if (chars.dataType === 'Unstructured') scores['Hyperautomation/Agentic Automation'] += 5;
-  if (chars.processComplexity === 'High') scores['Hyperautomation/Agentic Automation'] += 10;
-  if (!chars.isRuleBased) scores['Hyperautomation/Agentic Automation'] += 5;
+  if (chars.isWorkflowAutomation) scores['Power Platform'] += 30;
+  if (chars.hasAPIAvailability) scores['Power Platform'] += 25;
+  if (chars.processComplexity !== 'High') scores['Power Platform'] += 15;
+  if (chars.dataType === 'Structured') scores['Power Platform'] += 10;
+  if (chars.requiresHumanInTheLoop) scores['Power Platform'] += 10;
+  if (!chars.usesGenAI) scores['Power Platform'] += 5;
 
-  // ── Intelligent Automation scoring ─────────────────────────
-  if (chars.requiresDocumentUnderstanding) scores['Intelligent Automation'] += 30;
-  if (chars.usesGenAI && !chars.requiresMultiSystemOrchestration) scores['Intelligent Automation'] += 25;
-  if (chars.usesGenAI) scores['Intelligent Automation'] += 10;
-  if (chars.dataType === 'Semi-Structured') scores['Intelligent Automation'] += 15;
-  if (chars.dataType === 'Unstructured') scores['Intelligent Automation'] += 20;
-  if (chars.requiresReasoning && !chars.requiresMultiSystemOrchestration) scores['Intelligent Automation'] += 15;
-  if (chars.requiresHumanInTheLoop) scores['Intelligent Automation'] += 5;
-  if (chars.processComplexity === 'Medium') scores['Intelligent Automation'] += 5;
+  if (chars.isRuleBased) scores['Automation Anywhere'] += 30;
+  if (chars.dataType === 'Structured') scores['Automation Anywhere'] += 20;
+  if (!chars.hasAPIAvailability) scores['Automation Anywhere'] += 25;
+  if (!chars.requiresReasoning) scores['Automation Anywhere'] += 15;
+  if (chars.requiresMultiSystemOrchestration) scores['Automation Anywhere'] += 10;
+  if (chars.autonomyLevel <= 3) scores['Automation Anywhere'] += 5;
 
-  // ── RPA scoring ────────────────────────────────────────────
-  if (chars.isRuleBased) scores['RPA'] += 30;
-  if (chars.dataType === 'Structured') scores['RPA'] += 25;
-  if (!chars.requiresReasoning) scores['RPA'] += 20;
-  if (!chars.usesGenAI) scores['RPA'] += 10;
-  if (!chars.requiresDocumentUnderstanding) scores['RPA'] += 5;
-  if (chars.autonomyLevel <= 2) scores['RPA'] += 10;
-  if (chars.processComplexity === 'Low') scores['RPA'] += 10;
-  if (!chars.requiresMultiSystemOrchestration) scores['RPA'] += 5;
+  if (chars.usesGenAI) scores['Azure AI'] += 30;
+  if (chars.requiresReasoning) scores['Azure AI'] += 25;
+  if (chars.requiresDocumentUnderstanding) scores['Azure AI'] += 25;
+  if (chars.dataType !== 'Structured') scores['Azure AI'] += 15;
+  if (chars.autonomyLevel >= 4) scores['Azure AI'] += 10;
+  if (chars.processComplexity === 'High') scores['Azure AI'] += 10;
 
-  // ── Power Platform scoring ─────────────────────────────────
-  if (chars.isWorkflowAutomation) scores['Power Automate/Power Platform'] += 30;
-  if (chars.hasAPIAvailability) scores['Power Automate/Power Platform'] += 20;
-  if (chars.processComplexity === 'Low') scores['Power Automate/Power Platform'] += 20;
-  if (chars.dataType === 'Structured') scores['Power Automate/Power Platform'] += 10;
-  if (!chars.requiresReasoning) scores['Power Automate/Power Platform'] += 10;
-  if (!chars.usesGenAI) scores['Power Automate/Power Platform'] += 5;
-  if (chars.autonomyLevel <= 2) scores['Power Automate/Power Platform'] += 5;
-  if (!chars.requiresDocumentUnderstanding) scores['Power Automate/Power Platform'] += 5;
-
-  // ── Determine winner ──────────────────────────────────────
-  const maxScore = Math.max(...Object.values(scores));
-  const entries = Object.entries(scores) as [AutomationType, number][];
-  entries.sort((a, b) => b[1] - a[1]);
-
+  const entries = (Object.entries(scores) as [SupportedAutomationType, number][]).sort((a, b) => b[1] - a[1]);
+  const maxScore = Math.max(entries[0][1], 1);
+  const normalize = (score: number) => Math.min(100, Math.round((score / (maxScore + 15)) * 100));
   const recommended = entries[0][0];
-  const confidence = Math.min(100, Math.round((entries[0][1] / (maxScore + 20)) * 100));
-
-  // Build reasoning
-  const reasoning = buildReasoning(chars, recommended);
-  const assumptions = buildAssumptions(chars);
-  const alternatives = entries.slice(1).map(([type, score]) => ({
-    type,
-    score: Math.min(100, Math.round((score / (maxScore + 20)) * 100)),
-    reason: getAlternativeReason(type, chars),
-  }));
-
-  // Normalize match scores to 0-100
-  const matchScores = {} as Record<AutomationType, number>;
-  for (const [type, score] of entries) {
-    matchScores[type] = Math.min(100, Math.round((score / (maxScore + 20)) * 100));
-  }
+  const matchScores = Object.fromEntries(entries.map(([type, score]) => [type, normalize(score)])) as ClassificationResult['matchScores'];
 
   return {
     recommendedType: recommended,
-    confidenceScore: confidence,
-    reasoning,
-    assumptions,
-    alternatives,
+    confidenceScore: matchScores[recommended],
+    reasoning: buildReasoning(chars, recommended),
+    assumptions: buildAssumptions(chars),
+    alternatives: entries.slice(1).map(([type, score]) => ({ type, score: normalize(score), reason: alternativeReason(type) })),
     matchScores,
   };
 }
 
-function buildReasoning(chars: ProcessCharacteristics, type: AutomationType): string {
-  const reasons: string[] = [];
+export function normalizeAutomationType(value?: string | null): SupportedAutomationType {
+  if (value === 'Power Platform' || value === 'Power Automate/Power Platform') return 'Power Platform';
+  if (value === 'Automation Anywhere' || value === 'RPA') return 'Automation Anywhere';
+  return 'Azure AI';
+}
 
-  switch (type) {
-    case 'Hyperautomation/Agentic Automation':
-      if (chars.autonomyLevel >= 4) reasons.push(`High autonomy level (${chars.autonomyLevel}/5) indicates agentic capabilities`);
-      if (chars.requiresReasoning) reasons.push('Process requires complex reasoning and decision-making');
-      if (chars.requiresMultiSystemOrchestration) reasons.push('Multi-system orchestration needed across enterprise landscape');
-      if (chars.usesGenAI) reasons.push('GenAI capabilities required for intelligent processing');
-      if (chars.processComplexity === 'High') reasons.push('High process complexity demands hyperautomation approach');
-      break;
-    case 'Intelligent Automation':
-      if (chars.requiresDocumentUnderstanding) reasons.push('Document understanding/OCR capabilities are central to this process');
-      if (chars.usesGenAI) reasons.push('GenAI enhances intelligent document and data processing');
-      if (chars.dataType !== 'Structured') reasons.push(`${chars.dataType} data requires intelligent parsing`);
-      if (chars.requiresReasoning) reasons.push('Cognitive reasoning needed for exception handling');
-      break;
-    case 'RPA':
-      if (chars.isRuleBased) reasons.push('Highly rule-based process ideal for robotic process automation');
-      if (chars.dataType === 'Structured') reasons.push('Structured data enables deterministic bot execution');
-      if (!chars.requiresReasoning) reasons.push('No complex reasoning required — straightforward automation');
-      if (chars.autonomyLevel <= 2) reasons.push('Low autonomy requirement suits attended/unattended RPA bots');
-      break;
-    case 'Power Automate/Power Platform':
-      if (chars.isWorkflowAutomation) reasons.push('Workflow-centric process fits Power Automate cloud flows');
-      if (chars.hasAPIAvailability) reasons.push('Existing API connectors enable rapid Power Platform integration');
-      if (chars.processComplexity === 'Low') reasons.push('Low complexity suitable for citizen-developer Power Apps');
-      break;
-  }
-
-  return reasons.join('. ') + '.';
+function buildReasoning(chars: ProcessCharacteristics, type: SupportedAutomationType): string {
+  if (type === 'Power Platform')
+    return `The process is workflow-oriented${chars.hasAPIAvailability ? ' with connector/API-ready systems' : ''}, making Power Apps, Power Automate, Dataverse, and Power BI the strongest delivery fit.`;
+  if (type === 'Automation Anywhere')
+    return `The process is deterministic and rule-based${!chars.hasAPIAvailability ? ' with UI-level integration needs' : ''}, making attended or unattended Automation Anywhere bots the strongest fit.`;
+  return `The process requires ${chars.requiresDocumentUnderstanding ? 'document understanding, ' : ''}${chars.requiresReasoning ? 'reasoning, ' : ''}or generative AI capabilities, making Azure AI the strongest fit.`;
 }
 
 function buildAssumptions(chars: ProcessCharacteristics): string[] {
   const assumptions: string[] = [];
-  if (chars.hasAPIAvailability) assumptions.push('APIs are documented and accessible for integration');
-  if (chars.requiresHumanInTheLoop) assumptions.push('Human review checkpoints will be available during execution');
-  if (chars.requiresMultiSystemOrchestration) assumptions.push('Cross-system credentials and access policies are manageable');
-  if (chars.usesGenAI) assumptions.push('Organization has approved GenAI usage for this process domain');
-  if (chars.requiresDocumentUnderstanding) assumptions.push('Document templates are relatively standardized');
+  if (chars.hasAPIAvailability) assumptions.push('Required APIs and connectors are approved and accessible.');
+  if (chars.requiresHumanInTheLoop) assumptions.push('Named reviewers and approval SLAs will be available.');
+  if (chars.usesGenAI) assumptions.push('Azure AI usage and responsible-AI controls are approved.');
+  if (chars.requiresDocumentUnderstanding) assumptions.push('Representative documents are available for extraction testing.');
   return assumptions;
 }
 
-function getAlternativeReason(type: AutomationType, chars: ProcessCharacteristics): string {
-  switch (type) {
-    case 'Hyperautomation/Agentic Automation':
-      return chars.requiresMultiSystemOrchestration
-        ? 'Could leverage agentic orchestration if autonomy requirements increase'
-        : 'May benefit from agentic approach as process matures';
-    case 'Intelligent Automation':
-      return chars.usesGenAI || chars.requiresDocumentUnderstanding
-        ? 'AI/ML capabilities could enhance accuracy and throughput'
-        : 'Intelligent features could handle edge cases and exceptions';
-    case 'RPA':
-      return chars.isRuleBased
-        ? 'Rule-based components could be handled by traditional RPA bots'
-        : 'Simpler sub-processes may be candidates for RPA';
-    case 'Power Automate/Power Platform':
-      return chars.isWorkflowAutomation
-        ? 'Workflow portions could be rapidly built with Power Automate'
-        : 'Low-code option viable for simpler workflow segments';
-  }
+function alternativeReason(type: SupportedAutomationType): string {
+  if (type === 'Power Platform') return 'Suitable where low-code apps, approvals, connectors, and reporting dominate.';
+  if (type === 'Automation Anywhere') return 'Suitable where deterministic UI automation or legacy applications dominate.';
+  return 'Suitable where document extraction, language understanding, reasoning, or agents dominate.';
 }

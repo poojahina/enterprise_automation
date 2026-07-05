@@ -2,7 +2,13 @@
 export type Role = 'Business User' | 'Automation COE Analyst' | 'Solution Architect' | 'Product Owner';
 
 // ─── Automation Type ──────────────────────────────────────────
-export type AutomationType =
+export type SupportedAutomationType =
+  | 'Power Platform'
+  | 'Automation Anywhere'
+  | 'Azure AI';
+
+/** Legacy values remain readable for persisted records; new classification emits only SupportedAutomationType. */
+export type AutomationType = SupportedAutomationType
   | 'Hyperautomation/Agentic Automation'
   | 'RPA'
   | 'Intelligent Automation'
@@ -81,7 +87,7 @@ export interface ClassificationResult {
   reasoning: string;
   assumptions: string[];
   alternatives: Array<{ type: AutomationType; score: number; reason: string }>;
-  matchScores: Record<AutomationType, number>;
+  matchScores: Partial<Record<AutomationType, number>>;
 }
 
 // ─── Qualification Result ────────────────────────────────────
@@ -170,6 +176,7 @@ export interface A2BResult {
   missingInformation: string;
   recommendation: string;
   sourceDocumentId?: string;
+  sourceDocumentName?: string;
   sourceLocation?: string;
 }
 
@@ -273,6 +280,9 @@ export interface AutomationOpportunity {
   submittedBy: string;
   submittedDate: string;
   currentStage: PipelineStage;
+  a2bStatus?: A2BDecision;
+  a2bLastRunId?: string | null;
+  sddEnabled?: boolean;
 
   // Process details
   processCharacteristics: ProcessCharacteristics;

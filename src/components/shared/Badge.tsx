@@ -9,10 +9,9 @@ interface BadgeProps {
 
 const colorMap: Record<string, string> = {
   // Automation types
-  'Hyperautomation/Agentic Automation': 'bg-purple-500/20 text-purple-300 border-purple-500/30',
-  'RPA': 'bg-blue-500/20 text-blue-300 border-blue-500/30',
-  'Intelligent Automation': 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
-  'Power Automate/Power Platform': 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+  'Azure AI': 'bg-purple-500/20 text-purple-300 border-purple-500/30',
+  'Automation Anywhere': 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+  'Power Platform': 'bg-amber-500/20 text-amber-300 border-amber-500/30',
   // Priority bands
   'High': 'bg-red-500/20 text-red-300 border-red-500/30',
   'Critical': 'bg-red-600/20 text-red-300 border-red-600/30',

@@ -10,18 +10,16 @@ import ProgressStepper from '../../components/shared/ProgressStepper';
 import type { AutomationType, AutomationOpportunity } from '../../models/types';
 import { getNextStageRoute } from '../../utils/pipeline';
 
-const TYPE_COLORS: Record<AutomationType, string> = {
-  'Hyperautomation/Agentic Automation': '#a78bfa',
-  'RPA': '#60a5fa',
-  'Intelligent Automation': '#22d3ee',
-  'Power Automate/Power Platform': '#fbbf24',
+const TYPE_COLORS: Record<string, string> = {
+  'Azure AI': '#a78bfa',
+  'Automation Anywhere': '#60a5fa',
+  'Power Platform': '#fbbf24',
 };
 
-const TYPE_DESCRIPTIONS: Record<AutomationType, string> = {
-  'Hyperautomation/Agentic Automation': 'Multi-system orchestration with AI-driven reasoning, autonomous decision-making, and GenAI capabilities. Suitable for complex, high-autonomy processes.',
-  'RPA': 'Robotic Process Automation for rule-based, repetitive tasks with structured data. Ideal for deterministic processes with low complexity.',
-  'Intelligent Automation': 'AI/ML-enhanced automation with document understanding, NLP, and cognitive capabilities. Best for semi-structured/unstructured data processing.',
-  'Power Automate/Power Platform': 'Low-code workflow automation using Microsoft Power Platform. Perfect for API-driven workflows with simple business logic.',
+const TYPE_DESCRIPTIONS: Record<string, string> = {
+  'Power Platform': 'Power Apps for experiences, Power Automate for workflows, Dataverse for operational data, and Power BI for analytics.',
+  'Automation Anywhere': 'Attended and unattended bots governed through Control Room for deterministic UI and legacy-system automation.',
+  'Azure AI': 'Azure AI services for document understanding, language, reasoning, knowledge retrieval, and governed AI agents.',
 };
 
 const ClassificationPage: React.FC = () => {
@@ -59,10 +57,14 @@ const ClassificationPage: React.FC = () => {
     if (!opp) return;
     const requestedType = window.prompt(
       'Override classification type',
-      opp.classification?.alternatives[0]?.type ?? opp.classification?.recommendedType ?? 'RPA'
+      opp.classification?.alternatives[0]?.type ?? opp.classification?.recommendedType ?? 'Power Platform'
     );
 
     if (!requestedType) return;
+    if (!['Power Platform', 'Automation Anywhere', 'Azure AI'].includes(requestedType)) {
+      setSaveError('Choose exactly one supported type: Power Platform, Automation Anywhere, or Azure AI.');
+      return;
+    }
 
     setSaving(true);
     setSaveError('');
@@ -90,7 +92,7 @@ const ClassificationPage: React.FC = () => {
             </div>
             <h1 className="text-xl font-bold text-white">Classify Automation Solution Type</h1>
           </div>
-          <p className="text-sm text-gray-400 ml-10">Mandatory first step — AI-driven classification into Hyperautomation, RPA, Intelligent Automation, or Power Platform</p>
+          <p className="text-sm text-gray-400 ml-10">Mandatory first step — select Power Platform, Automation Anywhere, or Azure AI</p>
         </div>
       </div>
 

@@ -30,7 +30,7 @@ export function calculatePriorityScore(opp: AutomationOpportunity): OpportunityS
     priorityBand,
     complexity,
     dimensions: { businessImpact, strategicAlignment, feasibility, roiPotential },
-    recommendedAutomationType: opp.classification?.recommendedType ?? 'RPA',
+    recommendedAutomationType: opp.classification?.recommendedType ?? 'Power Platform',
     ranking: 0, // set externally when comparing multiple opportunities
   };
 }

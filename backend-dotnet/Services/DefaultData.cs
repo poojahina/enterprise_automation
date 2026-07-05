@@ -22,11 +22,9 @@ public static class DefaultData
 
     public static readonly IntegrationConfigEntity[] Integrations =
     [
-        new() { Id = "int-1", Provider = "AzureOpenAI", IsActive = true, Credentials = """{"apiKey":"MOCK_AZURE_KEY"}""" },
-        new() { Id = "int-2", Provider = "AWSBedrock", IsActive = false, Credentials = """{"apiKey":"MOCK_AWS_KEY"}""" },
-        new() { Id = "int-3", Provider = "GoogleVertex", IsActive = false, Credentials = """{"apiKey":"MOCK_GCP_KEY"}""" },
-        new() { Id = "int-4", Provider = "SharePoint", IsActive = false, Credentials = """{"token":"MOCK_SP_TOKEN"}""" },
-        new() { Id = "int-5", Provider = "AzureDevOps", IsActive = false, Credentials = """{"pat":"MOCK_ADO_PAT"}""" },
+        new() { Id = "int-1", Provider = "AzureOpenAI", IsActive = true, Credentials = """{"keyVaultSecretUri":"https://<vault>.vault.azure.net/secrets/azure-openai-key"}""" },
+        new() { Id = "int-4", Provider = "SharePoint", IsActive = false, Credentials = """{"keyVaultSecretUri":"https://<vault>.vault.azure.net/secrets/sharepoint-token"}""" },
+        new() { Id = "int-5", Provider = "AzureDevOps", IsActive = false, Credentials = """{"keyVaultSecretUri":"https://<vault>.vault.azure.net/secrets/azure-devops-pat"}""" },
     ];
 
     public static readonly A2BReadinessCriterionEntity[] A2BCriteria =

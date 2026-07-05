@@ -10,6 +10,9 @@ export function parseOpportunityData(opportunity: Opportunity) {
     currentStage: opportunity.currentStage,
     status: opportunity.status,
     pipelineStatus: opportunity.status,
+    a2bStatus: (opportunity as Opportunity & { a2bStatus?: string }).a2bStatus ?? data.a2bStatus ?? 'NOT_RUN',
+    a2bLastRunId: (opportunity as Opportunity & { a2bLastRunId?: string | null }).a2bLastRunId ?? data.a2bLastRunId ?? null,
+    sddEnabled: (opportunity as Opportunity & { sddEnabled?: boolean }).sddEnabled ?? data.sddEnabled ?? false,
   };
 }
 
@@ -22,5 +25,7 @@ export function normalizeOpportunityPayload(payload: Record<string, unknown>): R
     backlogItems: payload.backlogItems ?? [],
     complianceChecks: payload.complianceChecks ?? [],
     auditTrail: payload.auditTrail ?? [],
+    a2bStatus: payload.a2bStatus ?? 'NOT_RUN',
+    sddEnabled: payload.sddEnabled ?? false,
   };
 }

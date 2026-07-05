@@ -12,6 +12,8 @@ const stageAliases = new Map<string, string>([
   ['Discovery', 'Discovery'],
   ['PDD Creation', 'PDD Creation'],
   ['PRD Creation', 'PDD Creation'],
+  ['A2B', 'A2B Readiness Check'],
+  ['A2B Readiness Check', 'A2B Readiness Check'],
   ['SDD Creation', 'SDD Creation'],
   ['Solution Design', 'SDD Creation'],
   ['Solution Designed', 'SDD Creation'],

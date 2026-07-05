@@ -1,12 +1,21 @@
+BEGIN;
+
 CREATE TABLE IF NOT EXISTS opportunities (
   id text PRIMARY KEY,
   process_name text NOT NULL,
   current_stage text NOT NULL,
   status text NOT NULL,
+  a2b_status text NOT NULL DEFAULT 'NOT_RUN',
+  a2b_last_run_id text NULL,
+  sdd_enabled boolean NOT NULL DEFAULT false,
   data jsonb NOT NULL DEFAULT '{}'::jsonb,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
+
+ALTER TABLE opportunities ADD COLUMN IF NOT EXISTS a2b_status text NOT NULL DEFAULT 'NOT_RUN';
+ALTER TABLE opportunities ADD COLUMN IF NOT EXISTS a2b_last_run_id text NULL;
+ALTER TABLE opportunities ADD COLUMN IF NOT EXISTS sdd_enabled boolean NOT NULL DEFAULT false;
 
 CREATE TABLE IF NOT EXISTS stage_configs (
   id text PRIMARY KEY,
@@ -65,8 +74,21 @@ CREATE TABLE IF NOT EXISTS a2b_readiness_results (
 );
 CREATE TABLE IF NOT EXISTS a2b_overrides (
   id text PRIMARY KEY, project_id text NOT NULL REFERENCES opportunities(id) ON DELETE CASCADE,
-  authorized_by text NOT NULL, role text NOT NULL, reason text NOT NULL, created_at timestamptz NOT NULL DEFAULT now()
+  authorized_by text NOT NULL, role text NOT NULL, reason text NOT NULL,
+  is_active boolean NOT NULL DEFAULT true, invalidated_at timestamptz NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
 );
+ALTER TABLE a2b_overrides ADD COLUMN IF NOT EXISTS is_active boolean NOT NULL DEFAULT true;
+ALTER TABLE a2b_overrides ADD COLUMN IF NOT EXISTS invalidated_at timestamptz NULL;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_opportunities_a2b_last_run') THEN
+    ALTER TABLE opportunities
+      ADD CONSTRAINT fk_opportunities_a2b_last_run
+      FOREIGN KEY (a2b_last_run_id) REFERENCES a2b_readiness_runs(id) ON DELETE SET NULL;
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS ix_opportunities_updated_at ON opportunities(updated_at DESC);
 CREATE INDEX IF NOT EXISTS ix_opportunities_current_stage ON opportunities(current_stage);
@@ -74,6 +96,8 @@ CREATE INDEX IF NOT EXISTS ix_documents_opportunity_id ON documents(opportunity_
 CREATE INDEX IF NOT EXISTS ix_audit_trails_opportunity_id ON audit_trails(opportunity_id);
 CREATE INDEX IF NOT EXISTS ix_a2b_runs_project_id ON a2b_readiness_runs(project_id, executed_at DESC);
 CREATE INDEX IF NOT EXISTS ix_a2b_results_run_id ON a2b_readiness_results(readiness_run_id);
+CREATE INDEX IF NOT EXISTS ix_a2b_criteria_active ON a2b_readiness_criteria(is_active);
+CREATE INDEX IF NOT EXISTS ix_a2b_overrides_active ON a2b_overrides(project_id, is_active);
 
 INSERT INTO stage_configs (id, name, stage_order, is_enabled, roles_allowed)
 VALUES
@@ -92,7 +116,8 @@ VALUES
 ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   stage_order = EXCLUDED.stage_order,
-  roles_allowed = EXCLUDED.roles_allowed;
+  roles_allowed = EXCLUDED.roles_allowed,
+  is_enabled = CASE WHEN EXCLUDED.name = 'A2B Readiness Check' THEN true ELSE stage_configs.is_enabled END;
 
 INSERT INTO a2b_readiness_criteria (id,name,description,category,severity,expected_evidence,applicable_document_types)
 VALUES
@@ -110,11 +135,11 @@ VALUES
 ('a2b-12','Stakeholders/sign-off identified','Verify sign-off.','Governance','optional','stakeholders approvals sign-off','["PDD","BRD"]')
 ON CONFLICT (id) DO NOTHING;
 
+COMMIT;
+
 INSERT INTO integration_configs (id, provider, is_active, credentials)
 VALUES
-  ('int-1', 'AzureOpenAI', true, '{"apiKey":"MOCK_AZURE_KEY"}'::jsonb),
-  ('int-2', 'AWSBedrock', false, '{"apiKey":"MOCK_AWS_KEY"}'::jsonb),
-  ('int-3', 'GoogleVertex', false, '{"apiKey":"MOCK_GCP_KEY"}'::jsonb),
-  ('int-4', 'SharePoint', false, '{"token":"MOCK_SP_TOKEN"}'::jsonb),
-  ('int-5', 'AzureDevOps', false, '{"pat":"MOCK_ADO_PAT"}'::jsonb)
+  ('int-1', 'AzureOpenAI', true, '{"keyVaultSecretUri":"https://<vault>.vault.azure.net/secrets/azure-openai-key"}'::jsonb),
+  ('int-4', 'SharePoint', false, '{"keyVaultSecretUri":"https://<vault>.vault.azure.net/secrets/sharepoint-token"}'::jsonb),
+  ('int-5', 'AzureDevOps', false, '{"keyVaultSecretUri":"https://<vault>.vault.azure.net/secrets/azure-devops-pat"}'::jsonb)
 ON CONFLICT (id) DO NOTHING;

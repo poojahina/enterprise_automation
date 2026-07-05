@@ -13,6 +13,7 @@ async function ensureDefaultStages() {
           name: stage.name,
           order: stage.order,
           rolesAllowed: stage.rolesAllowed,
+          ...(stage.name === 'A2B Readiness Check' ? { isEnabled: true } : {}),
         },
         create: stage,
       })
@@ -47,6 +48,9 @@ router.put('/', async (req, res) => {
     }
     if (typeof stage.isEnabled !== 'boolean') {
       return res.status(400).json({ error: `isEnabled must be true or false for ${stage.id}` });
+    }
+    if (stage.id === 'stage-7' && stage.isEnabled === false) {
+      return res.status(400).json({ error: 'A2B Readiness Check is mandatory and cannot be disabled.' });
     }
     ids.add(stage.id);
   }
@@ -87,6 +91,9 @@ router.put('/:id', async (req, res) => {
     } = {};
 
     if (typeof name === 'string') data.name = name;
+    if (id === 'stage-7' && isEnabled === false) {
+      return res.status(400).json({ error: 'A2B Readiness Check is mandatory and cannot be disabled.' });
+    }
     if (typeof isEnabled === 'boolean') data.isEnabled = isEnabled;
     if (configOptions !== undefined) {
       data.configOptions = typeof configOptions === 'string' || configOptions === null

@@ -5,17 +5,16 @@ export const defaultStages = [
   { id: 'stage-4', name: 'Scored', order: 4, isEnabled: true, rolesAllowed: JSON.stringify(['System']) },
   { id: 'stage-5', name: 'Discovery', order: 5, isEnabled: true, rolesAllowed: JSON.stringify(['Business User', 'Solution Architect']) },
   { id: 'stage-6', name: 'PDD Creation', order: 6, isEnabled: true, rolesAllowed: JSON.stringify(['Product Owner', 'Solution Architect']) },
-  { id: 'stage-7', name: 'SDD Creation', order: 7, isEnabled: true, rolesAllowed: JSON.stringify(['Solution Architect']) },
-  { id: 'stage-8', name: 'ROI Approved', order: 8, isEnabled: true, rolesAllowed: JSON.stringify(['Product Owner', 'Finance']) },
-  { id: 'stage-9', name: 'Prioritized', order: 9, isEnabled: true, rolesAllowed: JSON.stringify(['Automation COE Analyst', 'Product Owner']) },
-  { id: 'stage-10', name: 'Pod Allocated', order: 10, isEnabled: true, rolesAllowed: JSON.stringify(['Product Owner']) },
-  { id: 'stage-11', name: 'Sprint Ready', order: 11, isEnabled: true, rolesAllowed: JSON.stringify(['Scrum Master', 'Pod Lead']) },
+  { id: 'stage-7', name: 'A2B Readiness Check', order: 7, isEnabled: true, rolesAllowed: JSON.stringify(['Product Owner', 'Solution Architect', 'Automation COE Analyst']) },
+  { id: 'stage-8', name: 'SDD Creation', order: 8, isEnabled: true, rolesAllowed: JSON.stringify(['Solution Architect']) },
+  { id: 'stage-9', name: 'ROI Approved', order: 9, isEnabled: true, rolesAllowed: JSON.stringify(['Product Owner', 'Finance']) },
+  { id: 'stage-10', name: 'Prioritized', order: 10, isEnabled: true, rolesAllowed: JSON.stringify(['Automation COE Analyst', 'Product Owner']) },
+  { id: 'stage-11', name: 'Pod Allocated', order: 11, isEnabled: true, rolesAllowed: JSON.stringify(['Product Owner']) },
+  { id: 'stage-12', name: 'Sprint Ready', order: 12, isEnabled: true, rolesAllowed: JSON.stringify(['Scrum Master', 'Pod Lead']) },
 ];
 
 export const defaultIntegrations = [
-  { id: 'int-1', provider: 'AzureOpenAI', isActive: true, credentials: '{"apiKey":"MOCK_AZURE_KEY"}' },
-  { id: 'int-2', provider: 'AWSBedrock', isActive: false, credentials: '{"apiKey":"MOCK_AWS_KEY"}' },
-  { id: 'int-3', provider: 'GoogleVertex', isActive: false, credentials: '{"apiKey":"MOCK_GCP_KEY"}' },
-  { id: 'int-4', provider: 'SharePoint', isActive: false, credentials: '{"token":"MOCK_SP_TOKEN"}' },
-  { id: 'int-5', provider: 'AzureDevOps', isActive: false, credentials: '{"pat":"MOCK_ADO_PAT"}' },
+  { id: 'int-1', provider: 'AzureOpenAI', isActive: true, credentials: '{"keyVaultSecretUri":"https://<vault>.vault.azure.net/secrets/azure-openai-key"}' },
+  { id: 'int-4', provider: 'SharePoint', isActive: false, credentials: '{"keyVaultSecretUri":"https://<vault>.vault.azure.net/secrets/sharepoint-token"}' },
+  { id: 'int-5', provider: 'AzureDevOps', isActive: false, credentials: '{"keyVaultSecretUri":"https://<vault>.vault.azure.net/secrets/azure-devops-pat"}' },
 ];

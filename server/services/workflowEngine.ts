@@ -2,39 +2,34 @@ import { randomUUID } from 'node:crypto';
 
 type OpportunityRecord = Record<string, any>;
 
+function normalizeAutomationType(value?: string): 'Power Platform' | 'Automation Anywhere' | 'Azure AI' {
+  if (value === 'Power Platform' || value === 'Power Automate/Power Platform') return 'Power Platform';
+  if (value === 'Automation Anywhere' || value === 'RPA') return 'Automation Anywhere';
+  return 'Azure AI';
+}
+
 const pods = [
   {
-    podName: 'Agentic AI Squad',
+    podName: 'Azure AI Engineering Squad',
     podLead: 'Priya Sharma',
     teamSize: 6,
-    skills: ['LangChain', 'Multi-Agent Systems', 'GenAI', 'Python', 'Azure OpenAI'],
+    skills: ['Microsoft Foundry', 'Azure OpenAI', 'Document Intelligence', 'Azure AI Search', 'Python'],
     currentCapacity: 40,
     assignedOpportunities: 2,
-    specialization: 'Hyperautomation/Agentic Automation',
+    specialization: 'Azure AI',
     deliveryRisk: 'Medium',
-    notes: 'Specializes in agentic orchestration and multi-system AI workflows',
+    notes: 'Specializes in governed Azure AI, document intelligence, retrieval, and agent solutions.',
   },
   {
-    podName: 'RPA Center of Excellence',
+    podName: 'Automation Anywhere Center of Excellence',
     podLead: 'Michael Chen',
     teamSize: 8,
-    skills: ['UiPath', 'Automation Anywhere', 'Blue Prism', '.NET', 'SQL'],
+    skills: ['Automation Anywhere', 'Control Room', 'Bot Creator', 'Bot Runner', 'Document Automation'],
     currentCapacity: 60,
     assignedOpportunities: 3,
-    specialization: 'RPA',
+    specialization: 'Automation Anywhere',
     deliveryRisk: 'Low',
-    notes: 'Mature team with 50+ bot deliveries. Strong governance framework.',
-  },
-  {
-    podName: 'Intelligent Automation Lab',
-    podLead: 'Sarah Rodriguez',
-    teamSize: 5,
-    skills: ['Document AI', 'NLP', 'Computer Vision', 'Python', 'Azure Cognitive Services'],
-    currentCapacity: 55,
-    assignedOpportunities: 2,
-    specialization: 'Intelligent Automation',
-    deliveryRisk: 'Medium',
-    notes: 'Expert in document processing, OCR, and AI/ML pipelines',
+    notes: 'Specializes in governed attended and unattended Automation Anywhere bot delivery.',
   },
   {
     podName: 'Power Platform Guild',
@@ -43,7 +38,7 @@ const pods = [
     skills: ['Power Automate', 'Power Apps', 'Power BI', 'SharePoint', 'Dataverse'],
     currentCapacity: 70,
     assignedOpportunities: 4,
-    specialization: 'Power Automate/Power Platform',
+    specialization: 'Power Platform',
     deliveryRisk: 'Low',
     notes: 'Citizen developer enablement team. Rapid delivery of workflow automation.',
   },
@@ -54,6 +49,12 @@ export function runWorkflowAction(opportunity: OpportunityRecord, action: string
 
   switch (action) {
     case 'accept-classification':
+      if (updated.classification) {
+        updated.classification = {
+          ...updated.classification,
+          recommendedType: normalizeAutomationType(updated.classification.recommendedType),
+        };
+      }
       updated.qualification = qualifyOpportunity(updated);
       updated.currentStage = 'Classified';
       appendAudit(updated, 'Classification Accepted', 'Classification was accepted and L1 qualification was generated.');
@@ -62,7 +63,7 @@ export function runWorkflowAction(opportunity: OpportunityRecord, action: string
     case 'override-classification':
       updated.classification = {
         ...(updated.classification ?? {}),
-        recommendedType: input.recommendedType ?? updated.classification?.recommendedType ?? 'RPA',
+        recommendedType: normalizeAutomationType(input.recommendedType ?? updated.classification?.recommendedType),
         confidenceScore: Number(input.confidenceScore ?? updated.classification?.confidenceScore ?? 75),
         reasoning: input.reasoning ?? 'Classification manually overridden by an analyst.',
       };
@@ -429,7 +430,7 @@ function calculatePriorityScore(opp: OpportunityRecord) {
     priorityBand: totalScore >= 75 ? 'High' : totalScore >= 45 ? 'Medium' : 'Low',
     complexity: calculateComplexity(opp),
     dimensions: { businessImpact, strategicAlignment: Math.min(100, strategicAlignment), feasibility, roiPotential },
-    recommendedAutomationType: opp.classification?.recommendedType ?? 'RPA',
+    recommendedAutomationType: normalizeAutomationType(opp.classification?.recommendedType),
     ranking: 0,
   };
 }
@@ -487,7 +488,7 @@ function generatePrd(opp: OpportunityRecord, aiOutput?: string) {
   const systems = discovery.systems?.length ? discovery.systems : technical.applications ?? [];
   const integrations = discovery.integrations?.length ? discovery.integrations : systems.map((system: string) => `${system} integration`);
   const dataSources = discovery.inputs?.length ? discovery.inputs : technical.dataSources ?? [];
-  const automationType = opp.score?.recommendedAutomationType ?? opp.classification?.recommendedType ?? 'RPA';
+  const automationType = normalizeAutomationType(opp.score?.recommendedAutomationType ?? opp.classification?.recommendedType);
   const monthlyVolume = Number(metrics.volumePerMonth ?? 0).toLocaleString();
   const manualEffort = Number(metrics.manualEffortHours ?? 0).toLocaleString();
   const timeSavings = Number(impact.timeSavingsHoursPerMonth ?? 0).toLocaleString();
@@ -611,7 +612,7 @@ function generatePdd(opp: OpportunityRecord) {
 }
 
 function generateSolution(opp: OpportunityRecord) {
-  const type = opp.score?.recommendedAutomationType ?? opp.classification?.recommendedType ?? 'RPA';
+  const type = normalizeAutomationType(opp.score?.recommendedAutomationType ?? opp.classification?.recommendedType);
   const discovery = opp.discovery ?? generateDiscovery(opp);
   const prd = opp.prd ?? generatePrd(opp);
   const metrics = opp.metrics ?? {};
@@ -636,18 +637,16 @@ function generateSolution(opp: OpportunityRecord) {
     : priority.complianceImpact === 'Medium'
       ? 'standard-control'
       : 'baseline-control';
-  const technology = type === 'Power Automate/Power Platform'
-    ? 'Power Automate cloud flows, Dataverse, Power Apps, SharePoint, Azure Key Vault, Power BI operational dashboards'
-    : type === 'Intelligent Automation'
-      ? 'Azure Document Intelligence, Azure Functions, workflow queue, API/RPA worker, Azure Storage, Application Insights'
-      : type === 'Hyperautomation/Agentic Automation'
-        ? 'Azure OpenAI, agent orchestrator service, enterprise API gateway, vector/context store, workflow queue, human review console'
-        : 'UiPath Orchestrator, unattended bot workers, attended review assistant, SQL audit store, API/file integration adapters';
+  const technology = type === 'Power Platform'
+    ? 'Power Apps, Power Automate cloud and desktop flows, Dataverse, approved connectors, Power BI, and managed solutions'
+    : type === 'Automation Anywhere'
+      ? 'Automation Anywhere Control Room, Bot Creator, attended/unattended Bot Runners, credential vault, workload queues, Document Automation, and Bot Insight'
+      : 'Microsoft Foundry, Azure OpenAI, Azure AI Search, Azure Document Intelligence, Azure Content Safety, Azure Functions, and Application Insights';
 
   const intakeLayer = `Intake layer: capture ${opp.processName} requests from ${dataSources.length ? dataSources.join(', ') : 'approved source channels'} with schema validation, duplicate detection, attachment/evidence handling, and requester/process-owner metadata.`;
   const orchestrationLayer = `Orchestration layer: execute ${discovery.asIsSteps?.join(' -> ') || 'intake -> validation -> processing -> exception handling -> downstream update'} using idempotent workflow steps, retry policies, and explicit state transitions.`;
   const rulesLayer = `Rules and decision layer: externalize rules for ${businessRules.join('; ')} so process owners can review thresholds, routing, and exception policy without code changes.`;
-  const integrationLayer = `Integration layer: connect to ${systems.length ? systems.join(', ') : 'source and target enterprise systems'} through ${integrations.length ? integrations.join(', ') : 'API, file, queue, or RPA adapters'} with correlation IDs and retry/error handling.`;
+  const integrationLayer = `Integration layer: connect to ${systems.length ? systems.join(', ') : 'source and target enterprise systems'} through ${integrations.length ? integrations.join(', ') : 'API, file, queue, or Automation Anywhere adapters'} with correlation IDs and retry/error handling.`;
   const exceptionLayer = `Exception layer: route ${exceptions.join('; ')} to the correct owner with source evidence, recommended action, SLA timer, approve/reject/request-info outcomes, and full audit history.`;
   const reportingLayer = `Reporting layer: expose throughput, cycle time, exception rate, SLA adherence, automation success rate, monthly volume (${monthlyVolume}), target savings (${timeSavings} hours/month and $${costSavings}/month), and user impact (${usersImpacted} users).`;
 
@@ -669,7 +668,7 @@ function generateSolution(opp: OpportunityRecord) {
       `Validation service - checks required fields, data types, duplicate requests, policy thresholds, and source evidence before orchestration begins.`,
       `Rules engine - implements configurable rules such as ${businessRules.slice(0, 3).join('; ')} with versioned changes and approval history.`,
       `Workflow orchestrator - coordinates validation, automation execution, human review, integration retries, notifications, and state transitions from PRD acceptance through ROI approval.`,
-      `Automation worker layer - ${type} execution workers for deterministic tasks, document understanding, API orchestration, RPA execution, or agent-assisted reasoning depending on the selected automation pattern.`,
+      `Automation worker layer - ${type} execution workers for low-code workflows, Automation Anywhere bot execution, or Azure AI reasoning depending on the selected platform.`,
       `Integration adapters - connectors for ${systems.length ? systems.join(', ') : 'source systems, target systems, email, file stores, and enterprise APIs'} with retry, timeout, reconciliation, and dead-letter handling.`,
       `Exception and approval workbench - queues failed, ambiguous, high-risk, or policy-controlled items for owner decision with context, evidence, recommended action, and SLA tracking.`,
       `Audit and evidence store - immutable event log for submissions, validations, rule decisions, approvals, integration calls, retries, overrides, and final outcomes.`,

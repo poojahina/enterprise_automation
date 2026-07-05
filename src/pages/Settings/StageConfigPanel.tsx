@@ -33,6 +33,7 @@ const StageConfigPanel: React.FC = () => {
   }, [globalStages, saving]);
 
   const toggleStage = (id: string) => {
+    if (stages.find(stage => stage.id === id)?.name === 'A2B Readiness Check') return;
     setMessage('');
     setStages(prev => prev.map(s => s.id === id ? { ...s, isEnabled: !s.isEnabled } : s));
   };
@@ -87,11 +88,12 @@ const StageConfigPanel: React.FC = () => {
                       className="sr-only peer"
                       aria-label={`${stage.isEnabled ? 'Disable' : 'Enable'} ${stage.name}`}
                       checked={stage.isEnabled}
-                      disabled={saving}
+                      disabled={saving || stage.name === 'A2B Readiness Check'}
                       onChange={() => toggleStage(stage.id)}
                     />
                     <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
                   </label>
+                  {stage.name === 'A2B Readiness Check' && <span className="ml-2 text-[10px] text-amber-300">Mandatory</span>}
                 </td>
               </tr>
             ))}

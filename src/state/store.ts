@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { AutomationOpportunity, Role } from '../models/types';
+import { normalizeAutomationType } from '../utils/classifyAutomationType';
 
 const normalizeOpportunityStage = (opportunity: AutomationOpportunity): AutomationOpportunity => {
   const legacyStages: Record<string, AutomationOpportunity['currentStage']> = {
@@ -9,7 +10,22 @@ const normalizeOpportunityStage = (opportunity: AutomationOpportunity): Automati
     'Solution Design': 'SDD Creation',
   };
   const currentStage = legacyStages[String(opportunity.currentStage)] ?? opportunity.currentStage;
-  return currentStage === opportunity.currentStage ? opportunity : { ...opportunity, currentStage };
+  const classification = opportunity.classification
+    ? {
+        ...opportunity.classification,
+        recommendedType: normalizeAutomationType(opportunity.classification.recommendedType),
+        alternatives: opportunity.classification.alternatives.map(item => ({ ...item, type: normalizeAutomationType(item.type) })),
+        matchScores: Object.entries(opportunity.classification.matchScores).reduce((scores, [type, score]) => {
+          const normalized = normalizeAutomationType(type);
+          scores[normalized] = Math.max(scores[normalized] ?? 0, score);
+          return scores;
+        }, { 'Power Platform': 0, 'Automation Anywhere': 0, 'Azure AI': 0 }),
+      }
+    : null;
+  const score = opportunity.score
+    ? { ...opportunity.score, recommendedAutomationType: normalizeAutomationType(opportunity.score.recommendedAutomationType) }
+    : null;
+  return { ...opportunity, currentStage, classification, score };
 };
 
 interface StageConfig {

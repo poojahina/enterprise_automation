@@ -135,7 +135,7 @@ export const mockOpportunities: AutomationOpportunity[] = [
     },
     solution: {
       toBeSummary: 'AI-powered invoice processing pipeline using Document AI for extraction, rule-based validation engine for three-way matching, and automated SAP posting with human-in-the-loop for exceptions.',
-      recommendedTechnology: 'Azure Document Intelligence + UiPath + SAP Integration Suite',
+      recommendedTechnology: 'Azure Document Intelligence + Automation Anywhere + SAP Integration Suite',
       architectureSummary: 'Cloud-based document processing pipeline with OCR/AI extraction, orchestration layer for validation and matching, direct SAP integration for posting, and exception management dashboard.',
       components: ['Document AI Extraction Service', 'Validation & Matching Engine', 'SAP Posting Module', 'Exception Management Portal', 'Audit & Compliance Logger'],
       integrations: ['Azure Blob Storage', 'Azure Document Intelligence', 'SAP S/4HANA OData', 'Power BI Dashboard'],

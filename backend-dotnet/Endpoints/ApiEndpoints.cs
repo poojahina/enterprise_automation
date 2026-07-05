@@ -30,7 +30,13 @@ public static class ApiEndpoints
 
             var data = OpportunityJson.FromBody(body);
             if (data["name"] is not null) stage.Name = data["name"]!.GetValue<string>();
-            if (data["isEnabled"] is not null) stage.IsEnabled = data["isEnabled"]!.GetValue<bool>();
+            if (data["isEnabled"] is not null)
+            {
+                var enabled = data["isEnabled"]!.GetValue<bool>();
+                if (stage.Name == "A2B Readiness Check" && !enabled)
+                    return Results.BadRequest(new { error = "A2B Readiness Check is mandatory and cannot be disabled." });
+                stage.IsEnabled = enabled;
+            }
             if (data["order"] is not null) stage.Order = data["order"]!.GetValue<int>();
             if (data["rolesAllowed"] is not null) stage.RolesAllowed = data["rolesAllowed"]!.ToJsonString(OpportunityJson.JsonOptions);
             if (data["configOptions"] is not null) stage.ConfigOptions = data["configOptions"]!.ToJsonString(OpportunityJson.JsonOptions);
@@ -60,6 +66,8 @@ public static class ApiEndpoints
                 if (requested["isEnabled"] is not JsonValue enabledValue ||
                     !enabledValue.TryGetValue<bool>(out var isEnabled))
                     return Results.BadRequest(new { error = $"isEnabled must be true or false for {stage.Name}" });
+                if (stage.Name == "A2B Readiness Check" && !isEnabled)
+                    return Results.BadRequest(new { error = "A2B Readiness Check is mandatory and cannot be disabled." });
 
                 stage.IsEnabled = isEnabled;
             }
@@ -102,6 +110,9 @@ public static class ApiEndpoints
                 ProcessName = processName,
                 CurrentStage = currentStage,
                 Status = status,
+                A2BStatus = OpportunityJson.StringValue(payload, "a2bStatus", "NOT_RUN"),
+                A2BLastRunId = OpportunityJson.StringValue(payload, "a2bLastRunId", "") is { Length: > 0 } lastRunId ? lastRunId : null,
+                SddEnabled = OpportunityJson.BoolPath(payload, "sddEnabled"),
                 Data = payload.ToJsonString(OpportunityJson.JsonOptions),
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -118,7 +129,13 @@ public static class ApiEndpoints
 
             var current = OpportunityJson.Parse(entity);
             var updates = OpportunityJson.FromBody(body);
+            var requestsSdd = OpportunityJson.StringValue(updates, "currentStage") == "SDD Creation" ||
+                              updates["solution"] is not null;
+            if (requestsSdd && !entity.SddEnabled)
+                return Results.Conflict(new { error = "SDD changes are blocked until A2B is READY or overridden.", code = "A2B_NOT_READY" });
             foreach (var kvp in updates) current[kvp.Key] = kvp.Value?.DeepClone();
+            if (updates["pdd"] is not null || updates["discovery"] is not null)
+                await InvalidateA2BAsync(db, entity, current);
             current["id"] = id;
             current = OpportunityJson.Normalize(current);
             OpportunityJson.AppendAudit(current, "Opportunity Updated", "Updated opportunity details", OpportunityJson.StringValue(updates, "performedBy", "System"), OpportunityJson.StringValue(updates, "role", "System"));
@@ -138,6 +155,8 @@ public static class ApiEndpoints
             if (entity is null) return Results.NotFound(new { error = "Opportunity not found" });
             var nextStage = await resolver.ResolveNextStageAsync(entity.CurrentStage);
             if (nextStage is null) return Results.BadRequest(new { error = "No next enabled stage is available" });
+            if (PipelineResolver.Normalize(nextStage) == "SDD Creation" && !entity.SddEnabled)
+                return Results.Conflict(new { error = "Cannot advance to SDD until A2B is READY or overridden.", code = "A2B_NOT_READY" });
 
             var data = OpportunityJson.Parse(entity);
             data["currentStage"] = nextStage;
@@ -173,6 +192,7 @@ public static class ApiEndpoints
                 var current = OpportunityJson.Parse(entity);
                 var input = body.ValueKind == JsonValueKind.Undefined ? [] : OpportunityJson.FromBody(body);
                 var updated = workflow.Run(current, action, input);
+                if (action == "apply-pdd") await InvalidateA2BAsync(db, entity, updated);
                 entity.ProcessName = OpportunityJson.StringValue(updated, "processName", entity.ProcessName);
                 entity.CurrentStage = OpportunityJson.StringValue(updated, "currentStage", entity.CurrentStage);
                 entity.Status = OpportunityJson.StringValue(updated, "status", entity.Status);
@@ -221,6 +241,9 @@ public static class ApiEndpoints
             var file = form.Files.GetFile("file");
             if (file is null) return Results.BadRequest(new { error = "No file uploaded" });
             if (string.IsNullOrWhiteSpace(opportunityId)) return Results.BadRequest(new { error = "Missing opportunityId" });
+            var opportunity = await db.Opportunities.FindAsync(opportunityId);
+            if (opportunity is null)
+                return Results.NotFound(new { error = "Opportunity not found" });
 
             await using var stream = file.OpenReadStream();
             using var reader = new StreamReader(stream);
@@ -235,6 +258,10 @@ public static class ApiEndpoints
                 UploadedAt = DateTime.UtcNow
             };
             db.Documents.Add(document);
+            var opportunityData = OpportunityJson.Parse(opportunity);
+            await InvalidateA2BAsync(db, opportunity, opportunityData);
+            opportunity.Data = opportunityData.ToJsonString(OpportunityJson.JsonOptions);
+            opportunity.UpdatedAt = DateTime.UtcNow;
             await db.SaveChangesAsync();
             return Results.Ok(new { success = true, document });
         });
@@ -252,7 +279,8 @@ public static class ApiEndpoints
         api.MapGet("/a2b/criteria", async (AppDbContext db) =>
         {
             await EnsureDefaultsAsync(db);
-            return Results.Ok(await db.A2BReadinessCriteria.OrderBy(c => c.CreatedAt).ToListAsync());
+            var criteria = await db.A2BReadinessCriteria.OrderBy(c => c.CreatedAt).ToListAsync();
+            return Results.Ok(criteria.Select(ToA2BCriterionDto));
         });
 
         api.MapPost("/a2b/criteria", async (JsonElement body, AppDbContext db) =>
@@ -261,6 +289,8 @@ public static class ApiEndpoints
             var severity = OpportunityJson.StringValue(data, "severity", "recommended").ToLowerInvariant();
             if (!new[] { "mandatory", "recommended", "optional" }.Contains(severity))
                 return Results.BadRequest(new { error = "Severity must be mandatory, recommended, or optional." });
+            if (data["applicableDocumentTypes"] is not null && data["applicableDocumentTypes"] is not JsonArray)
+                return Results.BadRequest(new { error = "applicableDocumentTypes must be an array." });
             var criterion = new A2BReadinessCriterionEntity
             {
                 Name = OpportunityJson.StringValue(data, "name"),
@@ -271,10 +301,11 @@ public static class ApiEndpoints
                 ApplicableDocumentTypes = data["applicableDocumentTypes"]?.ToJsonString(OpportunityJson.JsonOptions) ?? "[]",
                 IsActive = data["isActive"]?.GetValue<bool>() ?? true
             };
-            if (string.IsNullOrWhiteSpace(criterion.Name)) return Results.BadRequest(new { error = "Name is required." });
+            if (string.IsNullOrWhiteSpace(criterion.Name) || string.IsNullOrWhiteSpace(criterion.ExpectedEvidence))
+                return Results.BadRequest(new { error = "Name and expectedEvidence are required." });
             db.A2BReadinessCriteria.Add(criterion);
             await db.SaveChangesAsync();
-            return Results.Created($"/api/a2b/criteria/{criterion.Id}", criterion);
+            return Results.Created($"/api/a2b/criteria/{criterion.Id}", ToA2BCriterionDto(criterion));
         });
 
         api.MapPut("/a2b/criteria/{id}", async (string id, JsonElement body, AppDbContext db) =>
@@ -285,20 +316,33 @@ public static class ApiEndpoints
             if (data["name"] is not null) criterion.Name = OpportunityJson.StringValue(data, "name");
             if (data["description"] is not null) criterion.Description = OpportunityJson.StringValue(data, "description");
             if (data["category"] is not null) criterion.Category = OpportunityJson.StringValue(data, "category");
-            if (data["severity"] is not null) criterion.Severity = OpportunityJson.StringValue(data, "severity").ToLowerInvariant();
+            if (data["severity"] is not null)
+            {
+                var severity = OpportunityJson.StringValue(data, "severity").ToLowerInvariant();
+                if (!new[] { "mandatory", "recommended", "optional" }.Contains(severity))
+                    return Results.BadRequest(new { error = "Severity must be mandatory, recommended, or optional." });
+                criterion.Severity = severity;
+            }
             if (data["expectedEvidence"] is not null) criterion.ExpectedEvidence = OpportunityJson.StringValue(data, "expectedEvidence");
-            if (data["applicableDocumentTypes"] is not null) criterion.ApplicableDocumentTypes = data["applicableDocumentTypes"]!.ToJsonString(OpportunityJson.JsonOptions);
+            if (data["applicableDocumentTypes"] is not null)
+            {
+                if (data["applicableDocumentTypes"] is not JsonArray)
+                    return Results.BadRequest(new { error = "applicableDocumentTypes must be an array." });
+                criterion.ApplicableDocumentTypes = data["applicableDocumentTypes"]!.ToJsonString(OpportunityJson.JsonOptions);
+            }
             if (data["isActive"] is not null) criterion.IsActive = data["isActive"]!.GetValue<bool>();
             criterion.UpdatedAt = DateTime.UtcNow;
             await db.SaveChangesAsync();
-            return Results.Ok(criterion);
+            return Results.Ok(ToA2BCriterionDto(criterion));
         });
 
         api.MapDelete("/a2b/criteria/{id}", async (string id, AppDbContext db) =>
         {
             var criterion = await db.A2BReadinessCriteria.FindAsync(id);
             if (criterion is null) return Results.NotFound(new { error = "Criterion not found." });
-            db.A2BReadinessCriteria.Remove(criterion);
+            // Preserve historical readiness results while removing the criterion from future runs.
+            criterion.IsActive = false;
+            criterion.UpdatedAt = DateTime.UtcNow;
             await db.SaveChangesAsync();
             return Results.NoContent();
         });
@@ -317,9 +361,11 @@ public static class ApiEndpoints
 
         api.MapGet("/projects/{projectId}/a2b/status", async (string projectId, AppDbContext db) =>
         {
+            var project = await db.Opportunities.FindAsync(projectId);
+            if (project is null) return Results.NotFound(new { error = "Project not found." });
             var run = await db.A2BReadinessRuns.Where(r => r.ProjectId == projectId).OrderByDescending(r => r.ExecutedAt).FirstOrDefaultAsync();
-            var activeOverride = await db.A2BOverrides.Where(o => o.ProjectId == projectId).OrderByDescending(o => o.CreatedAt).FirstOrDefaultAsync();
-            return Results.Ok(new { status = run?.Status ?? "NOT_RUN", overallScore = run?.OverallScore ?? 0, lastRunId = run?.Id, sddEnabled = run?.Status == "READY" || activeOverride is not null, overridden = activeOverride is not null });
+            var activeOverride = await db.A2BOverrides.Where(o => o.ProjectId == projectId && o.IsActive).OrderByDescending(o => o.CreatedAt).FirstOrDefaultAsync();
+            return Results.Ok(new { status = project.A2BStatus, overallScore = run?.OverallScore ?? 0, lastRunId = project.A2BLastRunId, sddEnabled = project.SddEnabled, overridden = activeOverride is not null });
         });
 
         api.MapGet("/projects/{projectId}/a2b/results", async (string projectId, AppDbContext db) =>
@@ -329,13 +375,14 @@ public static class ApiEndpoints
             var results = await (from result in db.A2BReadinessResults
                                  join criterion in db.A2BReadinessCriteria on result.CriteriaId equals criterion.Id
                                  where result.ReadinessRunId == run.Id
-                                 select new { result.Id, result.Status, result.ConfidenceScore, result.EvidenceFound, result.MissingInformation, result.Recommendation, result.SourceDocumentId, result.SourceLocation, criterionId = criterion.Id, criterionName = criterion.Name, criterion.Category, criterion.Severity }).ToListAsync();
+                                 select new { result.Id, result.Status, result.ConfidenceScore, result.EvidenceFound, result.MissingInformation, result.Recommendation, result.SourceDocumentId, sourceDocumentName = result.SourceLocation, result.SourceLocation, criterionId = criterion.Id, criterionName = criterion.Name, criterion.Category, criterion.Severity }).ToListAsync();
             return Results.Ok(new { run, results });
         });
 
         api.MapPost("/projects/{projectId}/a2b/override", async (string projectId, JsonElement body, AppDbContext db) =>
         {
-            if (!await db.Opportunities.AnyAsync(o => o.Id == projectId)) return Results.NotFound(new { error = "Project not found." });
+            var project = await db.Opportunities.FindAsync(projectId);
+            if (project is null) return Results.NotFound(new { error = "Project not found." });
             var data = OpportunityJson.FromBody(body);
             var role = OpportunityJson.StringValue(data, "role");
             if (!new[] { "Product Owner", "Solution Architect", "Automation COE Analyst" }.Contains(role))
@@ -345,6 +392,12 @@ public static class ApiEndpoints
             var entry = new A2BOverrideEntity { ProjectId = projectId, AuthorizedBy = OpportunityJson.StringValue(data, "authorizedBy", "Authorized User"), Role = role, Reason = reason };
             db.A2BOverrides.Add(entry);
             db.AuditTrails.Add(new AuditTrailEntity { OpportunityId = projectId, Action = "A2B Override", PerformedBy = entry.AuthorizedBy, Role = role, Details = reason, Stage = "A2B Readiness Check" });
+            project.SddEnabled = true;
+            var projectData = OpportunityJson.Parse(project);
+            projectData["sddEnabled"] = true;
+            OpportunityJson.AppendAudit(projectData, "A2B Override", reason, entry.AuthorizedBy, role);
+            project.Data = projectData.ToJsonString(OpportunityJson.JsonOptions);
+            project.UpdatedAt = DateTime.UtcNow;
             await db.SaveChangesAsync();
             return Results.Ok(entry);
         });
@@ -381,6 +434,7 @@ public static class ApiEndpoints
                 existingStage.Name = stage.Name;
                 existingStage.Order = stage.Order;
                 existingStage.RolesAllowed = stage.RolesAllowed;
+                if (stage.Name == "A2B Readiness Check") existingStage.IsEnabled = true;
             }
         }
 
@@ -392,8 +446,13 @@ public static class ApiEndpoints
             }
         }
 
-        if (!await db.A2BReadinessCriteria.AnyAsync())
-            db.A2BReadinessCriteria.AddRange(DefaultData.A2BCriteria);
+        foreach (var criterion in DefaultData.A2BCriteria)
+        {
+            if (!await db.A2BReadinessCriteria.AnyAsync(existing => existing.Id == criterion.Id))
+            {
+                db.A2BReadinessCriteria.Add(criterion);
+            }
+        }
 
         await db.SaveChangesAsync();
     }
@@ -406,6 +465,7 @@ public static class ApiEndpoints
         try
         {
             var updated = workflow.Run(OpportunityJson.Parse(entity), action, []);
+            if (action == "apply-pdd") await InvalidateA2BAsync(db, entity, updated);
             entity.ProcessName = OpportunityJson.StringValue(updated, "processName", entity.ProcessName);
             entity.CurrentStage = OpportunityJson.StringValue(updated, "currentStage", entity.CurrentStage);
             entity.Status = OpportunityJson.StringValue(updated, "status", entity.Status);
@@ -439,4 +499,36 @@ public static class ApiEndpoints
         rolesAllowed = JsonNode.Parse(stage.RolesAllowed),
         configOptions = string.IsNullOrWhiteSpace(stage.ConfigOptions) ? null : JsonNode.Parse(stage.ConfigOptions)
     };
+
+    private static object ToA2BCriterionDto(A2BReadinessCriterionEntity criterion) => new
+    {
+        id = criterion.Id,
+        name = criterion.Name,
+        description = criterion.Description,
+        category = criterion.Category,
+        severity = criterion.Severity,
+        expectedEvidence = criterion.ExpectedEvidence,
+        applicableDocumentTypes = JsonNode.Parse(criterion.ApplicableDocumentTypes) ?? new JsonArray(),
+        isActive = criterion.IsActive,
+        createdAt = criterion.CreatedAt,
+        updatedAt = criterion.UpdatedAt
+    };
+
+    private static async Task InvalidateA2BAsync(AppDbContext db, OpportunityEntity entity, JsonObject data)
+    {
+        entity.A2BStatus = "NOT_RUN";
+        entity.A2BLastRunId = null;
+        entity.SddEnabled = false;
+        data["a2bStatus"] = entity.A2BStatus;
+        data["a2bLastRunId"] = null;
+        data["sddEnabled"] = false;
+        var activeOverrides = await db.A2BOverrides
+            .Where(item => item.ProjectId == entity.Id && item.IsActive)
+            .ToListAsync();
+        foreach (var item in activeOverrides)
+        {
+            item.IsActive = false;
+            item.InvalidatedAt = DateTime.UtcNow;
+        }
+    }
 }

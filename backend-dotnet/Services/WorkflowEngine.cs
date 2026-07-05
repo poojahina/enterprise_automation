@@ -13,11 +13,14 @@ public sealed class WorkflowEngine
         {
             case "accept-classification":
             case "override-classification":
+                if (action == "accept-classification" && updated["classification"] is JsonObject acceptedClassification)
+                    acceptedClassification["recommendedType"] = NormalizeAutomationType(OpportunityJson.StringValue(acceptedClassification, "recommendedType", "Power Platform"));
                 if (action == "override-classification")
                 {
+                    var requestedType = NormalizeAutomationType(OpportunityJson.StringValue(input, "recommendedType", "Power Platform"));
                     updated["classification"] = new JsonObject
                     {
-                        ["recommendedType"] = input["recommendedType"]?.DeepClone() ?? "RPA",
+                        ["recommendedType"] = requestedType,
                         ["confidenceScore"] = input["confidenceScore"]?.DeepClone() ?? 75,
                         ["reasoning"] = input["reasoning"]?.DeepClone() ?? "Classification manually overridden by an analyst."
                     };
@@ -189,7 +192,7 @@ public sealed class WorkflowEngine
             ["priorityBand"] = total >= 75 ? "High" : total >= 45 ? "Medium" : "Low",
             ["complexity"] = complexity == "High" ? "L" : complexity == "Medium" ? "M" : "S",
             ["dimensions"] = new JsonObject { ["businessImpact"] = businessImpact, ["strategicAlignment"] = strategic, ["feasibility"] = feasibility, ["roiPotential"] = roiPotential },
-            ["recommendedAutomationType"] = OpportunityJson.StringPath(opp, "classification.recommendedType", "RPA"),
+            ["recommendedAutomationType"] = NormalizeAutomationType(OpportunityJson.StringPath(opp, "classification.recommendedType", "Power Platform")),
             ["ranking"] = 0
         };
     }
@@ -294,13 +297,31 @@ public sealed class WorkflowEngine
     private static JsonObject BuildSolution(JsonObject opp)
     {
         var process = OpportunityJson.StringValue(opp, "processName", "automation process");
-        var type = OpportunityJson.StringPath(opp, "score.recommendedAutomationType", OpportunityJson.StringPath(opp, "classification.recommendedType", "RPA"));
+        var type = NormalizeAutomationType(OpportunityJson.StringPath(opp, "score.recommendedAutomationType", OpportunityJson.StringPath(opp, "classification.recommendedType", "Power Platform")));
+        var technology = type switch
+        {
+            "Power Platform" => "Power Apps, Power Automate cloud and desktop flows, Dataverse, approved connectors, Power BI, Power Platform environments and solutions",
+            "Automation Anywhere" => "Automation Anywhere Control Room, Bot Creator, unattended/attended Bot Runners, credential vault, workload queues, Document Automation, Bot Insight",
+            _ => "Microsoft Foundry, Azure OpenAI, Azure AI Search, Azure Document Intelligence, Azure Content Safety, Azure Functions, Application Insights"
+        };
+        var architecture = type switch
+        {
+            "Power Platform" => "Power Apps intake -> Dataverse -> Power Automate orchestration -> connectors/desktop flows -> exception approvals -> Power BI reporting.",
+            "Automation Anywhere" => "Business intake -> Control Room workload queue -> Bot Runners -> application/API adapters -> exception workbench -> Bot Insight and audit reporting.",
+            _ => "Application/API intake -> Azure AI extraction and retrieval -> Foundry model or agent orchestration -> governed tool calls -> human review -> Azure monitoring."
+        };
+        var components = type switch
+        {
+            "Power Platform" => new JsonArray("Power Apps intake and operations app", "Dataverse solution data model", "Power Automate cloud flows", "Power Automate desktop flows where required", "Managed connectors and connection references", "Approval and exception workbench", "Power BI operations dashboard", "Power Platform managed solutions and environment variables"),
+            "Automation Anywhere" => new JsonArray("Control Room control plane", "Workload queues", "Bot Creator source packages", "Unattended Bot Runners", "Attended automation assistant", "Credential vault", "Document Automation where required", "Exception queue", "Bot Insight dashboard"),
+            _ => new JsonArray("Microsoft Foundry project", "Azure OpenAI model deployment", "Azure Document Intelligence", "Azure AI Search knowledge index", "Agent or prompt orchestration", "Governed function/API tools", "Human review application", "Content Safety", "Application Insights tracing")
+        };
         return new JsonObject
         {
             ["toBeSummary"] = $"Enterprise {type} solution for {process}, covering intake, validation, orchestration, exception handling, audit, and reporting.",
-            ["recommendedTechnology"] = type.Contains("Power") ? "Power Automate, Dataverse, Power Apps, SharePoint, Power BI" : type.Contains("Intelligent") ? "Document AI, workflow queue, API/RPA worker, monitoring" : type.Contains("Agentic") ? "LLM-assisted orchestrator, enterprise APIs, workflow queue, human review console" : "UiPath Orchestrator, unattended bot workers, SQL audit store, API/file adapters",
-            ["architectureSummary"] = "Intake layer -> validation/rules -> workflow orchestration -> automation workers -> integration adapters -> exception workbench -> audit and reporting.",
-            ["components"] = new JsonArray("Intake console", "Canonical workflow data model", "Validation service", "Rules engine", "Workflow orchestrator", "Automation worker layer", "Integration adapters", "Exception and approval workbench", "Audit store", "Monitoring dashboard"),
+            ["recommendedTechnology"] = technology,
+            ["architectureSummary"] = architecture,
+            ["components"] = components,
             ["integrations"] = CloneArrayOrFallback(OpportunityJson.ArrayPath(opp, "technical.applications"), "Identity provider", "Secrets vault", "Enterprise logging/SIEM", "Reporting layer"),
             ["humanInLoopDesign"] = "Straight-through processing for standard transactions, with controlled human review for exceptions and high-risk decisions.",
             ["securityConsiderations"] = "Use least-privilege RBAC, vault-managed credentials, encrypted data, immutable audit logs, and compliance-ready evidence retention.",
@@ -339,12 +360,20 @@ public sealed class WorkflowEngine
         ["podName"] = "Automation Delivery Pod",
         ["podLead"] = "Solution Architect",
         ["teamSize"] = 6,
-        ["skills"] = new JsonArray("API Integration", "Workflow Automation", "RPA", "Monitoring"),
+        ["skills"] = new JsonArray("Power Platform", "Automation Anywhere", "Azure AI", "API Integration", "Monitoring"),
         ["currentCapacity"] = 55,
         ["assignedOpportunities"] = 2,
-        ["specialization"] = OpportunityJson.StringPath(opp, "score.recommendedAutomationType", "RPA"),
+        ["specialization"] = NormalizeAutomationType(OpportunityJson.StringPath(opp, "score.recommendedAutomationType", "Power Platform")),
         ["deliveryRisk"] = "Medium",
         ["notes"] = "Recommended based on automation type, complexity, and current capacity."
+    };
+
+    private static string NormalizeAutomationType(string value) => value switch
+    {
+        "Power Platform" or "Power Automate/Power Platform" => "Power Platform",
+        "Automation Anywhere" or "RPA" => "Automation Anywhere",
+        "Azure AI" or "Intelligent Automation" or "Hyperautomation/Agentic Automation" => "Azure AI",
+        _ => "Power Platform"
     };
 
     private static JsonArray BuildBacklog(JsonObject opp)

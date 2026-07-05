@@ -12,11 +12,77 @@ model Opportunity {
   processName      String
   currentStage     String
   status           String
+  a2bStatus        String       @default("NOT_RUN")
+  a2bLastRunId     String?
+  sddEnabled       Boolean      @default(false)
   data             String       // Core JSON blob containing metrics, impact, etc.
   documents        Document[]
   auditTrails      AuditTrail[]
+  a2bReadinessRuns A2BReadinessRun[]
+  a2bOverrides     A2BOverride[]
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
+}
+
+model A2BReadinessCriterion {
+  id                      String               @id @default(uuid())
+  name                    String
+  description             String
+  category                String
+  severity                String
+  expectedEvidence        String
+  applicableDocumentTypes String               @default("[]")
+  isActive                Boolean              @default(true)
+  results                 A2BReadinessResult[]
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+}
+
+model A2BReadinessRun {
+  id           String               @id @default(uuid())
+  projectId    String
+  pddId        String?
+  status       String
+  overallScore Float                @default(0)
+  executedBy   String
+  executedAt   DateTime             @default(now())
+  createdAt    DateTime             @default(now())
+  project      Opportunity          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  results      A2BReadinessResult[]
+
+  @@index([projectId, executedAt])
+}
+
+model A2BReadinessResult {
+  id                 String                @id @default(uuid())
+  readinessRunId     String
+  criteriaId         String
+  status             String
+  confidenceScore    Float                 @default(0)
+  evidenceFound      String                @default("")
+  missingInformation String                @default("")
+  recommendation     String                @default("")
+  sourceDocumentId   String?
+  sourceLocation     String?
+  createdAt          DateTime              @default(now())
+  run                A2BReadinessRun       @relation(fields: [readinessRunId], references: [id], onDelete: Cascade)
+  criterion          A2BReadinessCriterion @relation(fields: [criteriaId], references: [id])
+
+  @@index([readinessRunId])
+}
+
+model A2BOverride {
+  id           String      @id @default(uuid())
+  projectId    String
+  authorizedBy String
+  role         String
+  reason       String
+  isActive     Boolean     @default(true)
+  invalidatedAt DateTime?
+  createdAt    DateTime    @default(now())
+  project      Opportunity @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, createdAt])
 }
 
 model StageConfig {

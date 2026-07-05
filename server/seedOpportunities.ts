@@ -68,12 +68,12 @@ async function seed() {
       solution: {
         toBeSummary: 'An Intelligent Document Processing pipeline extracting data and an RPA bot entering it into SAP.',
         architectureSummary: 'Cloud OCR -> Queue -> RPA Bot -> SAP',
-        recommendedTechnology: 'Azure Form Recognizer + UiPath',
-        components: ['OCR Engine', 'UiPath Orchestrator', 'SAP BAPI']
+        recommendedTechnology: 'Azure Document Intelligence + Automation Anywhere + SAP Integration Suite',
+        components: ['Azure Document Intelligence', 'Automation Anywhere Control Room', 'SAP BAPI']
       },
       podAllocation: {
         podName: 'Intelligent Automation Pod Alpha',
-        skillsMatched: ['OCR', 'UiPath', 'SAP'],
+        skillsMatched: ['Document Intelligence', 'Automation Anywhere', 'SAP'],
         allocationPercentage: 100,
         startDate: '2026-07-01',
         endDate: '2026-08-30'

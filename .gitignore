@@ -20,3 +20,4 @@ obj/
 # OS
 .DS_Store
 *.local
+backend-dotnet/appsettings.Local.json

@@ -30,7 +30,7 @@ router.post('/generate', async (req, res) => {
     } else if (prompt.includes('architecture')) {
       result = 'Use Document Intelligence for OCR.\nUse Logic Apps for workflow.\nStore data in Azure SQL.';
     } else if (prompt.includes('team')) {
-      result = 'Recommended Pod: Intelligent Automation Squad.\nRequired Skills: Python, OCR, API Integration.\nEstimated Effort: 3 Sprints.';
+      result = 'Recommended Pod: Azure AI Engineering Squad.\nRequired Skills: Microsoft Foundry, Azure AI, document extraction, and API integration.\nEstimated Effort: 3 Sprints.';
     } else {
       result = 'Generated AI response based on the provided context.';
     }

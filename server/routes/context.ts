@@ -2,6 +2,8 @@ import { Router } from 'express';
 import multer from 'multer';
 import { prisma } from '../prismaClient';
 import { parseDocument } from '../services/documentParser';
+import { invalidateA2B } from '../services/a2bGate';
+import { parseOpportunityData } from '../utils/opportunityMapper';
 
 const router = Router();
 
@@ -21,6 +23,8 @@ router.post('/upload', upload.single('file'), async (req, res) => {
   }
 
   try {
+    const opportunity = await prisma.opportunity.findUnique({ where: { id: opportunityId } });
+    if (!opportunity) return res.status(404).json({ error: 'Opportunity not found' });
     // Simulate document parsing / OCR / Extraction
     const extractedContext = await parseDocument(file.buffer, file.mimetype);
 
@@ -32,6 +36,11 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         content: file.buffer.toString('base64'), // Store binary in DB for mock purposes
         extractedContext,
       }
+    });
+    const updatedData = await invalidateA2B(opportunityId, parseOpportunityData(opportunity));
+    await prisma.opportunity.update({
+      where: { id: opportunityId },
+      data: { a2bStatus: 'NOT_RUN', a2bLastRunId: null, sddEnabled: false, data: JSON.stringify(updatedData) },
     });
 
     res.json({ success: true, document });

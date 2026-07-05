@@ -7,11 +7,10 @@ import ScoreGauge from '../../components/shared/ScoreGauge';
 import { getAllPods } from '../../utils/recommendPod';
 import type { AutomationType } from '../../models/types';
 
-const TYPE_COLORS: Record<AutomationType, string> = {
-  'Hyperautomation/Agentic Automation': '#a78bfa',
-  'RPA': '#60a5fa',
-  'Intelligent Automation': '#22d3ee',
-  'Power Automate/Power Platform': '#fbbf24',
+const TYPE_COLORS: Record<string, string> = {
+  'Azure AI': '#a78bfa',
+  'Automation Anywhere': '#60a5fa',
+  'Power Platform': '#fbbf24',
 };
 
 const PodAllocationPage: React.FC = () => {
