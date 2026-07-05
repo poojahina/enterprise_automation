@@ -25,7 +25,7 @@ public sealed class A2BReadinessService(AppDbContext db, ILogger<A2BReadinessSer
 
         foreach (var criterion in criteria)
         {
-            var terms = criterion.ExpectedEvidence.Split([' ', ',', ';', '/'], StringSplitOptions.RemoveEmptyEntries)
+            var terms = criterion.ExpectedEvidence.Split(new[] { ' ', ',', ';', '/' }, StringSplitOptions.RemoveEmptyEntries)
                 .Where(t => t.Length > 3).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
             var best = sources.Select(source => new
             {
