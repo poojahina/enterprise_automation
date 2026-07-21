@@ -5,6 +5,7 @@ import { Search, FileText, Layers, AlertTriangle, Database, ArrowRight, Upload, 
 import AnimatedCard from '../../components/shared/AnimatedCard';
 import ProgressStepper from '../../components/shared/ProgressStepper';
 import { getNextStageRoute } from '../../utils/pipeline';
+import { apiFetch } from '../../utils/api';
 
 const DiscoveryWorkspace: React.FC = () => {
   const navigate = useNavigate();
@@ -44,7 +45,7 @@ const DiscoveryWorkspace: React.FC = () => {
     formData.append('opportunityId', opp.id);
 
     try {
-      const res = await fetch('/api/context/upload', {
+      const res = await apiFetch('/api/context/upload', {
         method: 'POST',
         body: formData
       });
@@ -64,7 +65,7 @@ const DiscoveryWorkspace: React.FC = () => {
     setGenerating(true);
     setMessage('');
     try {
-      const res = await fetch('/api/llm/generate', {
+      const res = await apiFetch('/api/llm/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: `Generate process steps for ${opp.processName}`, provider: 'AzureOpenAI', context: opp })

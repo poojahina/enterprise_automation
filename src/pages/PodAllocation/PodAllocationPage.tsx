@@ -6,6 +6,7 @@ import Badge from '../../components/shared/Badge';
 import ScoreGauge from '../../components/shared/ScoreGauge';
 import { getAllPods } from '../../utils/recommendPod';
 import type { AutomationType } from '../../models/types';
+import { apiFetch } from '../../utils/api';
 
 const TYPE_COLORS: Record<string, string> = {
   'Azure AI': '#a78bfa',
@@ -26,7 +27,7 @@ const PodAllocationPage: React.FC = () => {
     setGenerating(true);
     setMessage('');
     try {
-      await fetch('/api/llm/generate', {
+      await apiFetch('/api/llm/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: 'Generate team', provider: 'AzureOpenAI', context: selectedOpp })

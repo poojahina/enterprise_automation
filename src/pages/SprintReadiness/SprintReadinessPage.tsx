@@ -6,6 +6,7 @@ import Badge from '../../components/shared/Badge';
 import ScoreGauge from '../../components/shared/ScoreGauge';
 import StatusBadge from '../../components/shared/StatusBadge';
 import ProgressStepper from '../../components/shared/ProgressStepper';
+import { apiFetch } from '../../utils/api';
 
 const SprintReadinessPage: React.FC = () => {
   const { opportunities } = useStore();
@@ -34,7 +35,7 @@ const SprintReadinessPage: React.FC = () => {
     if (!opp || opp.backlogItems.length === 0) return;
     setSyncing(true);
     try {
-      const res = await fetch('/api/integrations/devops/sync', {
+      const res = await apiFetch('/api/integrations/devops/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ opportunityId: opp.id, items: opp.backlogItems })

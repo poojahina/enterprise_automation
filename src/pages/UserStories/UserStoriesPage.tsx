@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BookOpen, CheckCircle, Download, Sparkles } from 'lucide-react';
 import AnimatedCard from '../../components/shared/AnimatedCard';
 import { useStore } from '../../state/store';
+import { apiFetch } from '../../utils/api';
 
 const UserStoriesPage: React.FC = () => {
   const { opportunities, selectedOpportunityId, setSelectedOpportunityId } = useStore();
@@ -35,7 +36,7 @@ const UserStoriesPage: React.FC = () => {
 
   const exportStories = async () => {
     if (!opp) return;
-    const response = await fetch(`/api/documents/${opp.id}/sprint-backlog/export`);
+    const response = await apiFetch(`/api/documents/${opp.id}/sprint-backlog/export`);
     if (!response.ok) return setMessage('User story export failed.');
     const url = URL.createObjectURL(await response.blob());
     const link = document.createElement('a');

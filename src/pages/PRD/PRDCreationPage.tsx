@@ -5,6 +5,7 @@ import { FileSignature, Users, CheckCircle, AlertTriangle, Layers, ListTodo, Spa
 import AnimatedCard from '../../components/shared/AnimatedCard';
 import ProgressStepper from '../../components/shared/ProgressStepper';
 import { getNextStageRoute } from '../../utils/pipeline';
+import { apiFetch } from '../../utils/api';
 
 const PRDCreationPage: React.FC = () => {
   const navigate = useNavigate();
@@ -38,7 +39,7 @@ const PRDCreationPage: React.FC = () => {
     setGenerating(true);
     setMessage('');
     try {
-      const res = await fetch('/api/llm/generate', {
+      const res = await apiFetch('/api/llm/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: `Generate requirements for ${opp.processName}`, provider: 'AzureOpenAI', context: opp })

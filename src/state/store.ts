@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { AutomationOpportunity, Role } from '../models/types';
 import { normalizeAutomationType } from '../utils/classifyAutomationType';
+import { apiFetch } from '../utils/api';
 
 const normalizeOpportunityStage = (opportunity: AutomationOpportunity): AutomationOpportunity => {
   const legacyStages: Record<string, AutomationOpportunity['currentStage']> = {
@@ -70,7 +71,7 @@ export const useStore = create<AppState>()(
       stages: [],
       fetchStages: async () => {
         try {
-          const res = await fetch('/api/stages');
+          const res = await apiFetch('/api/stages');
           if (!res.ok) throw new Error('Failed to fetch stages');
 
           const stages = await res.json();
@@ -84,7 +85,7 @@ export const useStore = create<AppState>()(
       opportunities: [],
       fetchOpportunities: async () => {
         try {
-          const res = await fetch('/api/opportunities');
+          const res = await apiFetch('/api/opportunities');
           if (!res.ok) throw new Error('Failed to fetch opportunities');
 
           const opportunities = (await res.json()).map(normalizeOpportunityStage);
@@ -97,7 +98,7 @@ export const useStore = create<AppState>()(
 
       addOpportunity: async (opp) => {
         try {
-          const res = await fetch('/api/opportunities', {
+          const res = await apiFetch('/api/opportunities', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(opp),
@@ -114,7 +115,7 @@ export const useStore = create<AppState>()(
 
       updateOpportunity: async (id, updates) => {
         try {
-          const res = await fetch(`/api/opportunities/${id}`, {
+          const res = await apiFetch(`/api/opportunities/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updates),
@@ -133,7 +134,7 @@ export const useStore = create<AppState>()(
         }
       },
       saveStages: async (stages) => {
-        const res = await fetch('/api/stages', {
+        const res = await apiFetch('/api/stages', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ stages }),
@@ -154,7 +155,7 @@ export const useStore = create<AppState>()(
             'generate-solution': `/api/artifacts/${id}/sdd/generate`,
             'generate-backlog': `/api/artifacts/${id}/user-stories/generate`,
           };
-          const res = await fetch(artifactRoutes[action] ?? `/api/workflow/opportunities/${id}/actions/${action}`, {
+          const res = await apiFetch(artifactRoutes[action] ?? `/api/workflow/opportunities/${id}/actions/${action}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),

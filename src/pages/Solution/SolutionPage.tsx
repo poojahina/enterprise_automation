@@ -5,6 +5,7 @@ import { Lightbulb, Cpu, Shield, Monitor, Users, Puzzle, Sparkles, ArrowRight, C
 import AnimatedCard from '../../components/shared/AnimatedCard';
 import ProgressStepper from '../../components/shared/ProgressStepper';
 import { getNextStageRoute } from '../../utils/pipeline';
+import { apiFetch } from '../../utils/api';
 
 const SolutionPage: React.FC = () => {
   const navigate = useNavigate();
@@ -33,7 +34,7 @@ const SolutionPage: React.FC = () => {
 
   useEffect(() => {
     if (!selectedId) return;
-    fetch(`/api/projects/${selectedId}/a2b/status`)
+    apiFetch(`/api/projects/${selectedId}/a2b/status`)
       .then(async response => response.ok ? response.json() : Promise.reject(new Error('Unable to verify A2B status.')))
       .then(data => setSddEnabled(Boolean(data.sddEnabled)))
       .catch(error => { setSddEnabled(false); setMessage(error.message); });

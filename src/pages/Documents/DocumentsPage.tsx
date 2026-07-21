@@ -3,6 +3,7 @@ import { useStore } from '../../state/store';
 import { FileText, Download, Printer, Share2 } from 'lucide-react';
 import AnimatedCard from '../../components/shared/AnimatedCard';
 import type { AutomationOpportunity, BacklogItem } from '../../models/types';
+import { apiFetch } from '../../utils/api';
 
 type DocType = 'prd' | 'pdd' | 'business-case' | 'solution-design' | 'sprint-backlog';
 type DocumentSection = { title: string; lines: string[] };
@@ -20,7 +21,7 @@ const DocumentsPage: React.FC = () => {
     if (!opp) return;
     setSyncing(true);
     try {
-      const res = await fetch('/api/integrations/sharepoint/sync', {
+      const res = await apiFetch('/api/integrations/sharepoint/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ opportunityId: opp.id, documentId: activeDoc })
@@ -38,7 +39,7 @@ const DocumentsPage: React.FC = () => {
     if (!opp) return;
     setExporting(true);
     try {
-      const res = await fetch(`/api/documents/${opp.id}/${activeDoc}/export`);
+      const res = await apiFetch(`/api/documents/${opp.id}/${activeDoc}/export`);
       if (!res.ok) throw new Error('Export failed');
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);

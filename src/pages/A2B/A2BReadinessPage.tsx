@@ -5,6 +5,7 @@ import AnimatedCard from '../../components/shared/AnimatedCard';
 import ProgressStepper from '../../components/shared/ProgressStepper';
 import { useStore } from '../../state/store';
 import type { A2BDecision, A2BResult } from '../../models/types';
+import { apiFetch } from '../../utils/api';
 
 interface A2BPayload {
   run: { id: string; status: A2BDecision; overallScore: number } | null;
@@ -25,8 +26,8 @@ const A2BReadinessPage: React.FC = () => {
   const load = useCallback(async () => {
     if (!selectedId) return;
     const [resultsResponse, statusResponse] = await Promise.all([
-      fetch(`/api/projects/${selectedId}/a2b/results`),
-      fetch(`/api/projects/${selectedId}/a2b/status`)
+      apiFetch(`/api/projects/${selectedId}/a2b/results`),
+      apiFetch(`/api/projects/${selectedId}/a2b/status`)
     ]);
     if (!resultsResponse.ok || !statusResponse.ok) throw new Error('Unable to load A2B readiness.');
     setPayload(await resultsResponse.json());
@@ -43,7 +44,7 @@ const A2BReadinessPage: React.FC = () => {
   const runCheck = async () => {
     setRunning(true); setMessage('');
     try {
-      const response = await fetch(`/api/projects/${selectedId}/a2b/run`, {
+      const response = await apiFetch(`/api/projects/${selectedId}/a2b/run`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ executedBy: 'Current User' })
       });
       const data = await response.json();
@@ -58,7 +59,7 @@ const A2BReadinessPage: React.FC = () => {
   const override = async () => {
     const reason = window.prompt('Provide the business reason for overriding A2B:');
     if (!reason) return;
-    const response = await fetch(`/api/projects/${selectedId}/a2b/override`, {
+    const response = await apiFetch(`/api/projects/${selectedId}/a2b/override`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ authorizedBy: 'Current User', role, reason })
     });

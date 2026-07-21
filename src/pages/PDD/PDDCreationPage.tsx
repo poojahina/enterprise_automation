@@ -6,6 +6,7 @@ import ProgressStepper from '../../components/shared/ProgressStepper';
 import { useStore } from '../../state/store';
 import { getNextStageRoute } from '../../utils/pipeline';
 import type { ProcessDefinitionDocument } from '../../models/types';
+import { apiFetch } from '../../utils/api';
 
 const sectionLabels: { key: keyof ProcessDefinitionDocument; title: string }[] = [
   { key: 'processOverview', title: '1. Process Overview' },
@@ -57,7 +58,7 @@ const PDDCreationPage: React.FC = () => {
     if (!opp) return;
     setExporting(true);
     try {
-      const response = await fetch(`/api/documents/${opp.id}/pdd/export`);
+      const response = await apiFetch(`/api/documents/${opp.id}/pdd/export`);
       if (!response.ok) throw new Error('PDD export failed.');
       const url = URL.createObjectURL(await response.blob());
       const link = document.createElement('a');
