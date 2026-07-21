@@ -83,7 +83,6 @@ const Sidebar: React.FC = () => {
               key={item.path}
               to={item.path}
               aria-label={item.name}
-              title={tooltipLabel}
               onMouseEnter={(event) => showTooltip(event, tooltipLabel)}
               onMouseLeave={() => setTooltip(null)}
               onFocus={(event) => showTooltip(event, tooltipLabel)}
