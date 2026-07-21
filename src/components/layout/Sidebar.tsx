@@ -36,7 +36,7 @@ const navItems: NavItem[] = [
 
 const Sidebar: React.FC = () => {
   const { sidebarCollapsed, toggleSidebar, stages } = useStore();
-  const [tooltip, setTooltip] = useState<{ label: string; top: number; left: number } | null>(null);
+  const [tooltip, setTooltip] = useState<{ label: string; top: number; left: number; placement: 'inside' | 'outside' } | null>(null);
   const enabledStageStatuses = stages.length > 0 ? getEnabledPipelineStageStatuses() : [];
   const visibleNavItems = navItems.filter((item) => {
     const stageStatus = getStageStatusByRoute(item.path);
@@ -47,8 +47,9 @@ const Sidebar: React.FC = () => {
     const bounds = event.currentTarget.getBoundingClientRect();
     setTooltip({
       label,
-      top: bounds.top + bounds.height / 2,
-      left: bounds.right + 4,
+      top: sidebarCollapsed ? bounds.top + bounds.height / 2 : bounds.bottom + 6,
+      left: sidebarCollapsed ? bounds.right + 4 : bounds.left + 38,
+      placement: sidebarCollapsed ? 'outside' : 'inside',
     });
   };
 
@@ -110,11 +111,19 @@ const Sidebar: React.FC = () => {
       </nav>
       {tooltip && (
         <div
-          className="pointer-events-none fixed z-50 w-72 -translate-y-1/2 rounded-md border border-blue-400/50 bg-[hsl(220,28%,8%)] px-3 py-2.5 text-xs font-medium leading-relaxed text-white shadow-xl shadow-black/50 ring-1 ring-white/10"
+          className={`pointer-events-none fixed z-50 w-72 rounded-md border border-blue-400/50 bg-[hsl(220,28%,8%)] px-3 py-2.5 text-xs font-medium leading-relaxed text-white shadow-xl shadow-black/50 ring-1 ring-white/10 ${
+            tooltip.placement === 'outside' ? '-translate-y-1/2' : ''
+          }`}
           style={{ top: tooltip.top, left: tooltip.left }}
           role="tooltip"
         >
-          <span className="absolute left-[-5px] top-1/2 h-2.5 w-2.5 -translate-y-1/2 rotate-45 border-b border-l border-blue-400/50 bg-[hsl(220,28%,8%)]" />
+          <span
+            className={`absolute h-2.5 w-2.5 rotate-45 border-blue-400/50 bg-[hsl(220,28%,8%)] ${
+              tooltip.placement === 'outside'
+                ? 'left-[-5px] top-1/2 -translate-y-1/2 border-b border-l'
+                : 'left-3 top-[-5px] border-l border-t'
+            }`}
+          />
           {tooltip.label}
         </div>
       )}
