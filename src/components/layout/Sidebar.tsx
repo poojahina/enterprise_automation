@@ -3,29 +3,35 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, FileStack, Workflow, CheckSquare, BarChart3,
   Search as SearchIcon, Lightbulb, Calculator, Kanban, Users,
-  Rocket, FileText, ChevronLeft, ChevronRight, Zap, FileSignature, Settings, ClipboardCheck
+  Rocket, FileText, ChevronLeft, ChevronRight, Zap, FileSignature, Settings, ClipboardCheck, CircleHelp
 } from 'lucide-react';
 import { useStore } from '../../state/store';
 import { getEnabledPipelineStageStatuses, getStageStatusByRoute } from '../../utils/pipeline';
-import { Tooltip } from 'recharts';
 
-const navItems = [
-  { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-  { name: 'Submit Idea', path: '/intake', icon: FileStack },
-  { name: 'Classification', path: '/classification', icon: Workflow, Tooltip : 'Triage Agent : Receives and registers requests via FactoryHUB, refines idea classifies against KPMG strategy, Maps optimal platforms and their combination' },
-  { name: 'Qualification', path: '/qualification', icon: CheckSquare },
-  { name: 'Scoring', path: '/scoring', icon: BarChart3 },
-  { name: 'Discovery', path: '/discovery', icon: SearchIcon },
-  { name: 'PDD Creation', path: '/pdd', icon: FileSignature },
-  { name: 'A2B Readiness', path: '/a2b', icon: ClipboardCheck },
-  { name: 'SDD Creation', path: '/sdd', icon: Lightbulb },
-  { name: 'User Stories', path: '/user-stories', icon: FileText },
-  { name: 'ROI Calculator', path: '/roi', icon: Calculator },
-  { name: 'Prioritization', path: '/prioritization', icon: Kanban },
-  { name: 'Pod Allocation', path: '/pods', icon: Users },
-  { name: 'Sprint Readiness', path: '/sprint-readiness', icon: Rocket },
-  { name: 'Documents', path: '/documents', icon: FileText },
-  { name: 'Settings', path: '/settings', icon: Settings },
+type NavItem = {
+  name: string;
+  path: string;
+  icon: React.ComponentType<{ className?: string }>;
+  tooltip?: string;
+};
+
+const navItems: NavItem[] = [
+  { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, tooltip: 'View automation pipeline metrics, stage progress, and opportunity summaries.' },
+  { name: 'Submit Idea', path: '/intake', icon: FileStack, tooltip: 'Create and register a new automation opportunity in FactoryHUB.' },
+  { name: 'Classification', path: '/classification', icon: Workflow, tooltip: 'Triage Agent: Receives and registers requests via FactoryHUB, refines idea, classifies against KPMG strategy, and maps optimal platforms and their combination.' },
+  { name: 'Qualification', path: '/qualification', icon: CheckSquare, tooltip: 'Validate business fit, readiness, value potential, and qualification criteria.' },
+  { name: 'Scoring', path: '/scoring', icon: BarChart3, tooltip: 'Score opportunities by feasibility, value, complexity, and delivery confidence.' },
+  { name: 'Discovery', path: '/discovery', icon: SearchIcon, tooltip: 'Capture process details, systems, rules, exceptions, and discovery findings.' },
+  { name: 'PDD Creation', path: '/pdd', icon: FileSignature, tooltip: 'Generate and review the Process Definition Document for the selected opportunity.' },
+  { name: 'A2B Readiness', path: '/a2b', icon: ClipboardCheck, tooltip: 'Check analysis-to-build readiness before moving into solution design.' },
+  { name: 'SDD Creation', path: '/sdd', icon: Lightbulb, tooltip: 'Create the Solution Design Document with target architecture and delivery approach.' },
+  { name: 'User Stories', path: '/user-stories', icon: FileText, tooltip: 'Generate implementation-ready user stories and acceptance criteria.' },
+  { name: 'ROI Calculator', path: '/roi', icon: Calculator, tooltip: 'Estimate benefits, cost savings, investment, payback, and ROI for automation ideas.' },
+  { name: 'Prioritization', path: '/prioritization', icon: Kanban, tooltip: 'Compare opportunities and prioritize the best candidates for delivery.' },
+  { name: 'Pod Allocation', path: '/pods', icon: Users, tooltip: 'Assign delivery pods and balance work across available automation teams.' },
+  { name: 'Sprint Readiness', path: '/sprint-readiness', icon: Rocket, tooltip: 'Review build readiness, dependencies, blockers, and sprint entry criteria.' },
+  { name: 'Documents', path: '/documents', icon: FileText, tooltip: 'Access generated artifacts, uploaded files, and project documentation.' },
+  { name: 'Settings', path: '/settings', icon: Settings, tooltip: 'Configure pipeline stages, enabled workflow steps, and application settings.' },
 ];
 
 const Sidebar: React.FC = () => {
@@ -70,14 +76,17 @@ const Sidebar: React.FC = () => {
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
         {visibleNavItems.map((item) => {
           const Icon = item.icon;
+          const tooltipLabel = item.tooltip ?? item.name;
+
           return (
             <NavLink
               key={item.path}
               to={item.path}
               aria-label={item.name}
-              onMouseEnter={(event) => showTooltip(event, item.name)}
+              title={tooltipLabel}
+              onMouseEnter={(event) => showTooltip(event, tooltipLabel)}
               onMouseLeave={() => setTooltip(null)}
-              onFocus={(event) => showTooltip(event, item.name)}
+              onFocus={(event) => showTooltip(event, tooltipLabel)}
               onBlur={() => setTooltip(null)}
               className={({ isActive }) =>
                 `group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
@@ -89,7 +98,12 @@ const Sidebar: React.FC = () => {
             >
               <Icon className="w-4 h-4 flex-shrink-0" />
               {!sidebarCollapsed && (
-                <span className="truncate animate-fade-in">{item.name}</span>
+                <>
+                  <span className="min-w-0 flex-1 truncate animate-fade-in">{item.name}</span>
+                  {item.tooltip && (
+                    <CircleHelp className="h-3.5 w-3.5 flex-shrink-0 text-gray-500 transition-colors group-hover:text-blue-300" />
+                  )}
+                </>
               )}
             </NavLink>
           );
@@ -97,7 +111,7 @@ const Sidebar: React.FC = () => {
       </nav>
       {tooltip && (
         <div
-          className="pointer-events-none fixed z-50 -translate-y-1/2 rounded-md border border-white/10 bg-[hsl(220,25%,13%)] px-2.5 py-1.5 text-xs font-medium text-gray-100 shadow-lg shadow-black/30"
+          className="pointer-events-none fixed z-50 max-w-80 -translate-y-1/2 rounded-md border border-white/10 bg-[hsl(220,25%,13%)] px-2.5 py-1.5 text-xs font-medium leading-relaxed text-gray-100 shadow-lg shadow-black/30"
           style={{ top: tooltip.top, left: tooltip.left }}
           role="tooltip"
         >
