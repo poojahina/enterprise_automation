@@ -66,7 +66,9 @@ const SolutionPage: React.FC = () => {
         </div>
         <div>
           <h1 className="text-xl font-bold text-white">Solution Design Document (SDD)</h1>
-          <p className="text-sm text-gray-400">Create the architecture, integrations, security, monitoring, and implementation design</p>
+          <p className="max-w-3xl text-sm text-gray-300">
+            Generates solution design document from approved PDD, selects architecture pattern and platform topology
+          </p>
         </div>
       </div>
 

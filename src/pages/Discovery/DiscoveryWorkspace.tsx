@@ -124,7 +124,9 @@ const DiscoveryWorkspace: React.FC = () => {
         </div>
         <div>
           <h1 className="text-xl font-bold text-white">L2 Discovery Workspace</h1>
-          <p className="text-sm text-gray-400">Detailed process analysis, rules, exceptions, and integration mapping</p>
+          <p className="max-w-3xl text-sm text-gray-300">
+            Deep-dives requirement - context, variants, exceptions, remove ambiguity add techno functional details
+          </p>
         </div>
       </div>
 

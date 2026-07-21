@@ -92,7 +92,9 @@ const ClassificationPage: React.FC = () => {
             </div>
             <h1 className="text-xl font-bold text-white">Classify Automation Solution Type</h1>
           </div>
-          <p className="text-sm text-gray-400 ml-10">Mandatory first step — select Power Platform, Automation Anywhere, or Azure AI</p>
+          <p className="max-w-3xl text-sm text-gray-300 ml-10">
+            Receives and registers requests via FactoryHUB, refines idea, classifies against KPMG strategy, and maps optimal platforms and their combination.
+          </p>
         </div>
       </div>
 

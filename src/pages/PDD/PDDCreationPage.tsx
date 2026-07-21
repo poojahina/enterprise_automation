@@ -80,7 +80,9 @@ const PDDCreationPage: React.FC = () => {
         </div>
         <div>
           <h1 className="text-xl font-bold text-white">Process Definition Document (PDD)</h1>
-          <p className="text-sm text-gray-400">Create the as-is process, rules, exceptions, inputs, outputs, controls, and to-be process</p>
+          <p className="max-w-3xl text-sm text-gray-300">
+            Extracts requirements, rules and process flow, auto generates PDD to KPMG standards, flag gaps for human review before sign off
+          </p>
         </div>
       </div>
 

@@ -49,7 +49,12 @@ const UserStoriesPage: React.FC = () => {
     <div className="space-y-6 animate-fade-in" id="user-stories-page">
       <div className="flex items-center gap-2">
         <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-blue-600"><BookOpen className="w-4 h-4 text-white" /></div>
-        <div><h1 className="text-xl font-bold text-white">User Story Creation</h1><p className="text-sm text-gray-400">Generate delivery-ready stories from the PDD and SDD context</p></div>
+        <div>
+          <h1 className="text-xl font-bold text-white">User Story Creation</h1>
+          <p className="max-w-3xl text-sm text-gray-300">
+            Generate detailed user stories and acceptance criteria from use case or requirement
+          </p>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
