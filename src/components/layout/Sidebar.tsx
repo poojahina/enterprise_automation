@@ -48,7 +48,7 @@ const Sidebar: React.FC = () => {
     setTooltip({
       label,
       top: bounds.top + bounds.height / 2,
-      left: bounds.right + 10,
+      left: bounds.right + 4,
     });
   };
 
@@ -110,10 +110,11 @@ const Sidebar: React.FC = () => {
       </nav>
       {tooltip && (
         <div
-          className="pointer-events-none fixed z-50 max-w-80 -translate-y-1/2 rounded-md border border-white/10 bg-[hsl(220,25%,13%)] px-2.5 py-1.5 text-xs font-medium leading-relaxed text-gray-100 shadow-lg shadow-black/30"
+          className="pointer-events-none fixed z-50 w-72 -translate-y-1/2 rounded-md border border-blue-400/50 bg-[hsl(220,28%,8%)] px-3 py-2.5 text-xs font-medium leading-relaxed text-white shadow-xl shadow-black/50 ring-1 ring-white/10"
           style={{ top: tooltip.top, left: tooltip.left }}
           role="tooltip"
         >
+          <span className="absolute left-[-5px] top-1/2 h-2.5 w-2.5 -translate-y-1/2 rotate-45 border-b border-l border-blue-400/50 bg-[hsl(220,28%,8%)]" />
           {tooltip.label}
         </div>
       )}
