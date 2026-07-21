@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, FileStack, Workflow, CheckSquare, BarChart3,
@@ -7,11 +7,12 @@ import {
 } from 'lucide-react';
 import { useStore } from '../../state/store';
 import { getEnabledPipelineStageStatuses, getStageStatusByRoute } from '../../utils/pipeline';
+import { Tooltip } from 'recharts';
 
 const navItems = [
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { name: 'Submit Idea', path: '/intake', icon: FileStack },
-  { name: 'Classification', path: '/classification', icon: Workflow },
+  { name: 'Classification', path: '/classification', icon: Workflow, Tooltip : 'Triage Agent : Receives and registers requests via FactoryHUB, refines idea classifies against KPMG strategy, Maps optimal platforms and their combination' },
   { name: 'Qualification', path: '/qualification', icon: CheckSquare },
   { name: 'Scoring', path: '/scoring', icon: BarChart3 },
   { name: 'Discovery', path: '/discovery', icon: SearchIcon },
@@ -29,11 +30,21 @@ const navItems = [
 
 const Sidebar: React.FC = () => {
   const { sidebarCollapsed, toggleSidebar, stages } = useStore();
+  const [tooltip, setTooltip] = useState<{ label: string; top: number; left: number } | null>(null);
   const enabledStageStatuses = stages.length > 0 ? getEnabledPipelineStageStatuses() : [];
   const visibleNavItems = navItems.filter((item) => {
     const stageStatus = getStageStatusByRoute(item.path);
     return !stageStatus || enabledStageStatuses.length === 0 || enabledStageStatuses.includes(stageStatus);
   });
+
+  const showTooltip = (event: React.MouseEvent<HTMLElement> | React.FocusEvent<HTMLElement>, label: string) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    setTooltip({
+      label,
+      top: bounds.top + bounds.height / 2,
+      left: bounds.right + 10,
+    });
+  };
 
   return (
     <aside
@@ -63,7 +74,11 @@ const Sidebar: React.FC = () => {
             <NavLink
               key={item.path}
               to={item.path}
-              title={item.name}
+              aria-label={item.name}
+              onMouseEnter={(event) => showTooltip(event, item.name)}
+              onMouseLeave={() => setTooltip(null)}
+              onFocus={(event) => showTooltip(event, item.name)}
+              onBlur={() => setTooltip(null)}
               className={({ isActive }) =>
                 `group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
                   isActive
@@ -80,6 +95,15 @@ const Sidebar: React.FC = () => {
           );
         })}
       </nav>
+      {tooltip && (
+        <div
+          className="pointer-events-none fixed z-50 -translate-y-1/2 rounded-md border border-white/10 bg-[hsl(220,25%,13%)] px-2.5 py-1.5 text-xs font-medium text-gray-100 shadow-lg shadow-black/30"
+          style={{ top: tooltip.top, left: tooltip.left }}
+          role="tooltip"
+        >
+          {tooltip.label}
+        </div>
+      )}
 
       {/* Collapse Toggle */}
       <button
