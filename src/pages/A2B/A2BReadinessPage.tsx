@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { AlertTriangle, Bot, CheckCircle, ClipboardCheck, Play, Send, ShieldCheck, User } from 'lucide-react';
+import { AlertTriangle, Bot, CheckCircle, ChevronDown, ChevronUp, ClipboardCheck, Play, Send, ShieldCheck, User } from 'lucide-react';
 import AnimatedCard from '../../components/shared/AnimatedCard';
 import ProgressStepper from '../../components/shared/ProgressStepper';
 import { useStore } from '../../state/store';
@@ -37,6 +37,7 @@ const A2BReadinessPage: React.FC = () => {
     { id: 1, role: 'agent', content: 'How can I help you prepare this automation for build?' },
   ]);
   const [chatting, setChatting] = useState(false);
+  const [agentOpen, setAgentOpen] = useState(false);
   const opp = opportunities.find(o => o.id === selectedId);
 
   const load = useCallback(async () => {
@@ -123,33 +124,36 @@ const A2BReadinessPage: React.FC = () => {
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600"><ClipboardCheck className="h-4 w-4 text-white" /></div>
         <div><h1 className="text-xl font-bold text-white">A2B — Analysis-to-Build</h1><p className="text-sm text-gray-400">Validate analysis evidence before solution design begins</p></div>
       </div>
-      <select value={selectedId} onChange={e => setSelectedId(e.target.value)} className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-200">
-        {opportunities.map(o => <option key={o.id} value={o.id} className="bg-gray-900">{o.id} — {o.processName}</option>)}
-      </select>
+      <label className="flex max-w-xl flex-col gap-1.5 text-xs font-medium text-gray-400">
+        Automation ID
+        <select value={selectedId} onChange={e => setSelectedId(e.target.value)} className="rounded-lg border border-white/10 bg-gray-900 px-3 py-2 text-sm text-gray-200">
+          {opportunities.map(o => <option key={o.id} value={o.id}>{o.id} — {o.processName}</option>)}
+        </select>
+      </label>
       {opp && <ProgressStepper currentStage={opp.currentStage} />}
-      <AnimatedCard className="border-cyan-500/30 bg-gradient-to-br from-cyan-500/5 to-blue-500/5">
-        <div className="flex flex-col gap-3 border-b border-white/10 pb-4 sm:flex-row sm:items-center sm:justify-between">
+      <AnimatedCard>
+        <div className={`flex items-center justify-between ${agentOpen ? 'border-b border-white/10 pb-3' : ''}`}>
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-500/15">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-500/10">
               <Bot className="h-5 w-5 text-cyan-300" />
             </div>
             <div>
               <h2 className="font-semibold text-white">Build Agent</h2>
-              <p className="text-xs text-gray-400">Get build guidance for the selected automation</p>
+              <p className="text-xs text-gray-400">Reusable assets, libraries and error support</p>
             </div>
           </div>
-          <label className="flex items-center gap-2 text-xs font-medium text-gray-400">
-            Automation ID
-            <select
-              value={selectedId}
-              onChange={event => setSelectedId(event.target.value)}
-              className="rounded-lg border border-white/10 bg-gray-900 px-3 py-2 text-sm text-gray-200 focus:border-cyan-500/50 focus:outline-none"
-            >
-              {opportunities.map(o => <option key={o.id} value={o.id}>{o.id} — {o.processName}</option>)}
-            </select>
-          </label>
+          <button
+            type="button"
+            onClick={() => setAgentOpen(open => !open)}
+            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-cyan-300 hover:bg-white/5"
+            aria-expanded={agentOpen}
+          >
+            {agentOpen ? 'Close' : 'Ask Build Agent'}
+            {agentOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </button>
         </div>
 
+        {agentOpen && <>
         <div className="my-4 max-h-72 space-y-3 overflow-y-auto pr-1" aria-live="polite">
           {chatMessages.map(chatMessage => (
             <div key={chatMessage.id} className={`flex gap-2 ${chatMessage.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -201,12 +205,15 @@ const A2BReadinessPage: React.FC = () => {
             <Send className="h-4 w-4" /> Send
           </button>
         </div>
+        </>}
       </AnimatedCard>
-      <div className="grid gap-3 md:grid-cols-6">
-        <AnimatedCard><p className="text-xs text-gray-400">Decision</p><p className="mt-1 font-bold text-white">{payload.run?.status ?? 'NOT_RUN'}</p></AnimatedCard>
-        <AnimatedCard><p className="text-xs text-gray-400">Score</p><p className="mt-1 font-bold text-white">{payload.run?.overallScore ?? 0}%</p></AnimatedCard>
-        {['passed','failed','partial','not_applicable'].map(status => <AnimatedCard key={status}><p className="text-xs capitalize text-gray-400">{status.replace('_', ' ')}</p><p className="mt-1 font-bold text-white">{counts[status] ?? 0}</p></AnimatedCard>)}
-      </div>
+      <AnimatedCard>
+        <div className="grid grid-cols-2 divide-x divide-white/10 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="px-3 py-1 first:pl-0"><p className="text-xs text-gray-400">Decision</p><p className="mt-1 font-semibold text-white">{payload.run?.status ?? 'Not run'}</p></div>
+          <div className="px-3 py-1"><p className="text-xs text-gray-400">Score</p><p className="mt-1 font-semibold text-white">{payload.run?.overallScore ?? 0}%</p></div>
+          {['passed','failed','partial','not_applicable'].map(status => <div key={status} className="px-3 py-1"><p className="text-xs capitalize text-gray-400">{status.replace('_', ' ')}</p><p className="mt-1 font-semibold text-white">{counts[status] ?? 0}</p></div>)}
+        </div>
+      </AnimatedCard>
       <AnimatedCard>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div><h2 className="font-semibold text-white">A2B controls</h2><p className="text-xs text-gray-400">Every active database criterion is evaluated against the PDD and uploaded project documents.</p></div>
@@ -219,14 +226,17 @@ const A2BReadinessPage: React.FC = () => {
         {message && <p className="mt-3 text-sm text-blue-300">{message}</p>}
       </AnimatedCard>
       <AnimatedCard className="overflow-x-auto">
-        <table className="w-full min-w-[900px] text-left text-xs">
-          <thead className="border-b border-white/10 text-gray-400"><tr>{['Criterion','Severity','Status','Confidence','Evidence','Missing information','Recommendation'].map(h => <th key={h} className="p-3">{h}</th>)}</tr></thead>
+        <div className="mb-3">
+          <h2 className="font-semibold text-white">Check results</h2>
+          <p className="text-xs text-gray-400">Evidence and next steps for each A2B check.</p>
+        </div>
+        <table className="w-full min-w-[720px] text-left text-xs">
+          <thead className="border-b border-white/10 text-gray-400"><tr>{['Check','Status','Evidence or gap','Recommendation'].map(h => <th key={h} className="p-3">{h}</th>)}</tr></thead>
           <tbody>{payload.results.map(result => <tr key={result.id} className="border-b border-white/5 align-top">
-            <td className="p-3 font-medium text-white">{result.criterionName}<div className="text-[10px] text-gray-500">{result.category}</div></td>
-            <td className="p-3 text-gray-300">{result.severity}</td>
-            <td className="p-3">{result.status === 'passed' ? <span className="text-emerald-400">passed</span> : <span className="flex items-center gap-1 text-amber-300"><AlertTriangle className="h-3 w-3" />{result.status}</span>}</td>
-            <td className="p-3 text-gray-300">{result.confidenceScore}%</td><td className="p-3 text-gray-300">{result.evidenceFound || '—'}{result.sourceLocation && <div className="text-[10px] text-blue-300">{result.sourceLocation}</div>}</td>
-            <td className="p-3 text-gray-300">{result.missingInformation || '—'}</td><td className="p-3 text-gray-300">{result.recommendation}</td>
+            <td className="p-3 font-medium text-white">{result.criterionName}<div className="mt-1 text-[10px] text-gray-500">{result.category} · {result.severity}</div></td>
+            <td className="p-3">{result.status === 'passed' ? <span className="text-emerald-400">Passed</span> : <span className="flex items-center gap-1 text-amber-300"><AlertTriangle className="h-3 w-3" />{result.status}</span>}<div className="mt-1 text-[10px] text-gray-500">{result.confidenceScore}% confidence</div></td>
+            <td className="p-3 text-gray-300">{result.evidenceFound || result.missingInformation || '—'}{result.sourceLocation && <div className="mt-1 text-[10px] text-blue-300">{result.sourceLocation}</div>}</td>
+            <td className="p-3 text-gray-300">{result.recommendation}</td>
           </tr>)}</tbody>
         </table>
         {!payload.results.length && <p className="py-8 text-center text-sm text-gray-400">Run A2B to generate readiness results.</p>}
