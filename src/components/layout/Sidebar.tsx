@@ -13,19 +13,20 @@ type NavItem = {
   path: string;
   icon: React.ComponentType<{ className?: string }>;
   tooltip?: string;
+  section?: string;
 };
 
 const navItems: NavItem[] = [
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, tooltip: 'View automation pipeline metrics, stage progress, and opportunity summaries.' },
-  { name: 'Submit Idea', path: '/intake', icon: FileStack, tooltip: 'Create and register a new automation opportunity in FactoryHUB.' },
-  { name: 'Classification', path: '/classification', icon: Workflow, tooltip: 'Triage Agent' },
-  { name: 'Qualification', path: '/qualification', icon: CheckSquare, tooltip: 'Validate business fit, readiness, value potential, and qualification criteria.' },
-  { name: 'Scoring', path: '/scoring', icon: BarChart3, tooltip: 'Score opportunities by feasibility, value, complexity, and delivery confidence.' },
-  { name: 'Discovery', path: '/discovery', icon: SearchIcon, tooltip: 'Discovery Agent' },
-  { name: 'PDD Creation', path: '/pdd', icon: FileSignature, tooltip: 'PDD Agent' },
-  { name: 'A2B Readiness', path: '/a2b', icon: ClipboardCheck, tooltip: 'A2B Agent' },
-  { name: 'SDD Creation', path: '/sdd', icon: Lightbulb, tooltip: 'SDD Agent' },
-  { name: 'User Stories', path: '/user-stories', icon: FileText, tooltip: 'User Story Agent' },
+  { name: 'Submit Idea', path: '/intake', icon: FileStack, tooltip: 'Create and register a new automation opportunity in FactoryHUB.', section: 'Intake Phase' },
+  { name: 'Classification', path: '/classification', icon: Workflow, tooltip: 'Triage Agent', section: 'Intake Phase' },
+  { name: 'Qualification', path: '/qualification', icon: CheckSquare, tooltip: 'Validate business fit, readiness, value potential, and qualification criteria.', section: 'Intake Phase' },
+  { name: 'Scoring', path: '/scoring', icon: BarChart3, tooltip: 'Score opportunities by feasibility, value, complexity, and delivery confidence.', section: 'Intake Phase' },
+  { name: 'Discovery', path: '/discovery', icon: SearchIcon, tooltip: 'Discovery Agent', section: 'Intake Phase' },
+  { name: 'PDD Creation', path: '/pdd', icon: FileSignature, tooltip: 'PDD Agent', section: 'Intake Phase' },
+  { name: 'A2B', path: '/a2b', icon: ClipboardCheck, tooltip: 'A2B Agent', section: 'A2B Phase' },
+  { name: 'SDD Creation', path: '/sdd', icon: Lightbulb, tooltip: 'SDD Agent', section: 'Build Phase' },
+  { name: 'User Stories', path: '/user-stories', icon: FileText, tooltip: 'User Story Agent', section: 'Build Phase' },
   { name: 'ROI Calculator', path: '/roi', icon: Calculator, tooltip: 'Estimate benefits, cost savings, investment, payback, and ROI for automation ideas.' },
   { name: 'Prioritization', path: '/prioritization', icon: Kanban, tooltip: 'Compare opportunities and prioritize the best candidates for delivery.' },
   { name: 'Pod Allocation', path: '/pods', icon: Users, tooltip: 'Assign delivery pods and balance work across available automation teams.' },
@@ -75,37 +76,51 @@ const Sidebar: React.FC = () => {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
-        {visibleNavItems.map((item) => {
+        {visibleNavItems.map((item, index) => {
           const Icon = item.icon;
           const tooltipLabel = item.tooltip ?? item.name;
+          const previousSection = visibleNavItems[index - 1]?.section;
+          const showSectionLabel = item.section && item.section !== previousSection;
+          const showSectionEnd = !item.section && Boolean(previousSection);
 
           return (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              aria-label={item.name}
-              onMouseEnter={(event) => showTooltip(event, tooltipLabel)}
-              onMouseLeave={() => setTooltip(null)}
-              onFocus={(event) => showTooltip(event, tooltipLabel)}
-              onBlur={() => setTooltip(null)}
-              className={({ isActive }) =>
-                `group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
-                  isActive
-                    ? 'bg-blue-500/15 text-blue-400 shadow-sm shadow-blue-500/10'
-                    : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
-                }`
-              }
-            >
-              <Icon className="w-4 h-4 flex-shrink-0" />
-              {!sidebarCollapsed && (
-                <>
-                  <span className="min-w-0 flex-1 truncate animate-fade-in">{item.name}</span>
-                  {item.tooltip && (
-                    <CircleHelp className="h-3.5 w-3.5 flex-shrink-0 text-gray-500 transition-colors group-hover:text-blue-300" />
-                  )}
-                </>
+            <React.Fragment key={item.path}>
+              {showSectionEnd && <div className="mx-2 my-2 border-t border-white/10" aria-hidden="true" />}
+              {showSectionLabel && (
+                sidebarCollapsed ? (
+                  <div className="mx-2 my-2 border-t border-white/10" aria-hidden="true" />
+                ) : (
+                  <div className="mx-2 mt-2 border-t border-white/10 px-1 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-500">
+                    {item.section}
+                  </div>
+                )
               )}
-            </NavLink>
+              <NavLink
+                to={item.path}
+                aria-label={item.name}
+                onMouseEnter={(event) => showTooltip(event, tooltipLabel)}
+                onMouseLeave={() => setTooltip(null)}
+                onFocus={(event) => showTooltip(event, tooltipLabel)}
+                onBlur={() => setTooltip(null)}
+                className={({ isActive }) =>
+                  `group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                    isActive
+                      ? 'bg-blue-500/15 text-blue-400 shadow-sm shadow-blue-500/10'
+                      : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
+                  }`
+                }
+              >
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                {!sidebarCollapsed && (
+                  <>
+                    <span className="min-w-0 flex-1 truncate animate-fade-in">{item.name}</span>
+                    {item.tooltip && (
+                      <CircleHelp className="h-3.5 w-3.5 flex-shrink-0 text-gray-500 transition-colors group-hover:text-blue-300" />
+                    )}
+                  </>
+                )}
+              </NavLink>
+            </React.Fragment>
           );
         })}
       </nav>
