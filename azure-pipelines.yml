@@ -1,0 +1,150 @@
+# Azure DevOps pipeline for two Linux Azure Web Apps:
+#   1. ASP.NET Core 8 backend API
+#   2. React/Vite frontend served by PM2
+
+trigger:
+  branches:
+    include:
+      - main
+
+pr:
+  branches:
+    include:
+      - main
+
+variables:
+  # Replace these values, or override them in the pipeline UI/variable group.
+  azureServiceConnection: 'YOUR-AZURE-SERVICE-CONNECTION'
+  backendWebAppName: 'enterprise-automation-api'
+  frontendWebAppName: 'enterprise-automation-ui'
+  backendBaseUrl: 'https://enterprise-automation-api.azurewebsites.net'
+  buildConfiguration: 'Release'
+  nodeVersion: '20.x'
+  dotnetVersion: '8.x'
+
+stages:
+  - stage: Build
+    displayName: Build and test
+    jobs:
+      - job: BuildApplications
+        displayName: Build frontend and backend
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - checkout: self
+
+          - task: UseNode@1
+            displayName: Use Node.js $(nodeVersion)
+            inputs:
+              version: $(nodeVersion)
+
+          - task: UseDotNet@2
+            displayName: Use .NET SDK $(dotnetVersion)
+            inputs:
+              packageType: sdk
+              version: $(dotnetVersion)
+
+          - script: npm ci
+            displayName: Install frontend dependencies
+
+          - script: npm run lint
+            displayName: Lint frontend
+
+          - script: npm run build
+            displayName: Build frontend
+            env:
+              VITE_API_BASE_URL: $(backendBaseUrl)
+
+          - script: dotnet restore backend-dotnet.Tests/EnterpriseAutomation.Api.Tests.csproj
+            displayName: Restore backend and test dependencies
+
+          - script: dotnet test backend-dotnet.Tests/EnterpriseAutomation.Api.Tests.csproj --configuration $(buildConfiguration) --no-restore
+            displayName: Test backend
+
+          - script: dotnet publish backend-dotnet/EnterpriseAutomation.Api.csproj --configuration $(buildConfiguration) --no-restore --output $(Build.ArtifactStagingDirectory)/backend
+            displayName: Publish backend
+
+          - task: ArchiveFiles@2
+            displayName: Package backend
+            inputs:
+              rootFolderOrFile: $(Build.ArtifactStagingDirectory)/backend
+              includeRootFolder: false
+              archiveType: zip
+              archiveFile: $(Build.ArtifactStagingDirectory)/backend.zip
+              replaceExistingArchive: true
+
+          - task: ArchiveFiles@2
+            displayName: Package frontend
+            inputs:
+              rootFolderOrFile: $(Build.SourcesDirectory)/dist
+              includeRootFolder: false
+              archiveType: zip
+              archiveFile: $(Build.ArtifactStagingDirectory)/frontend.zip
+              replaceExistingArchive: true
+
+          - task: PublishPipelineArtifact@1
+            displayName: Publish deployment artifacts
+            inputs:
+              targetPath: $(Build.ArtifactStagingDirectory)
+              artifact: webapps
+
+  - stage: DeployBackend
+    displayName: Deploy backend Linux Web App
+    dependsOn: Build
+    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+    jobs:
+      - deployment: DeployBackendWebApp
+        displayName: Deploy backend API
+        environment: enterprise-automation-backend
+        pool:
+          vmImage: ubuntu-latest
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: DownloadPipelineArtifact@2
+                  inputs:
+                    artifact: webapps
+                    path: $(Pipeline.Workspace)/webapps
+
+                - task: AzureRmWebAppDeployment@4
+                  displayName: Deploy .NET 8 API
+                  inputs:
+                    ConnectionType: AzureRM
+                    azureSubscription: $(azureServiceConnection)
+                    appType: webAppLinux
+                    WebAppName: $(backendWebAppName)
+                    packageForLinux: $(Pipeline.Workspace)/webapps/backend.zip
+                    RuntimeStack: DOTNETCORE|8.0
+
+  - stage: DeployFrontend
+    displayName: Deploy frontend Linux Web App
+    dependsOn:
+      - Build
+      - DeployBackend
+    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+    jobs:
+      - deployment: DeployFrontendWebApp
+        displayName: Deploy Vite frontend
+        environment: enterprise-automation-frontend
+        pool:
+          vmImage: ubuntu-latest
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: DownloadPipelineArtifact@2
+                  inputs:
+                    artifact: webapps
+                    path: $(Pipeline.Workspace)/webapps
+
+                - task: AzureRmWebAppDeployment@4
+                  displayName: Deploy frontend
+                  inputs:
+                    ConnectionType: AzureRM
+                    azureSubscription: $(azureServiceConnection)
+                    appType: webAppLinux
+                    WebAppName: $(frontendWebAppName)
+                    packageForLinux: $(Pipeline.Workspace)/webapps/frontend.zip
+                    RuntimeStack: NODE|20-lts
+                    StartupCommand: pm2 serve /home/site/wwwroot --spa --no-daemon
